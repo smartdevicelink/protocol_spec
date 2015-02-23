@@ -24,7 +24,7 @@
     <th width="25%">Byte 8</th>
   </tr>
   <tr>
-    <td colspan="4" align="center">Date Size</td>
+    <td colspan="4" align="center">Data Size</td>
   </tr>
 </table>
 
