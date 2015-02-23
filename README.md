@@ -89,12 +89,12 @@
   <tr>
     <td>C</td>
     <td>1 bit</td>
-    <td><u>Compression Flag</u> <br> 0x0 This packet is not compressed <br> 0x1 This packet is compressed <br> <b>Note:</b> Only available in Protocol Version 1</td>
+    <td><b>Compression Flag</b> <br> 0x0 This packet is not compressed <br> 0x1 This packet is compressed <br> <b>Note:</b> Only available in Protocol Version 1</td>
   </tr>
   <tr>
     <td>E</td>
     <td>1 bit</td>
-    <td><u>Encryption Flag</u> <br> 0x0 This packet is not encrypted <br> 0x1 This packet is encrypted <br> <b>Note:</b> Only available in Protocol Version 2</td>
+    <td><b>Encryption Flag</b> <br> 0x0 This packet is not encrypted <br> 0x1 This packet is encrypted <br> <b>Note:</b> Only available in Protocol Version 2</td>
   </tr>
   <tr>
     <td>Frame Type</td>
@@ -126,7 +126,7 @@
     <td>Frame Info</td>
     <td>8 bit</td>
     <td>
-      <u>Frame Type = 0x00 (Control Frame)</u><br>
+      <b>Frame Type = 0x00 (Control Frame)</b><br>
       0x00 Heartbeat<br>
       0x01 Start Service<br>
       0x02 Start Service ACK<br>
@@ -137,11 +137,11 @@
       0x07 - 0xFD Reserved<br>
       0xFE Service Data ACK<br>
       0xFF Heartbeat ACK<br>
-      <u>Frame Type = 0x01 (Single Frame)</u><br>
+      <b>Frame Type = 0x01 (Single Frame)</b><br>
       0x00 Reserved // TODO: needs clarification<br>
-      <u>Frame Type = 0x02 (First Frame)</u><br>
+      <b>Frame Type = 0x02 (First Frame)</b><br>
       0x00 Reserved // TODO: needs clarification<br>
-      <u>Frame Type = 0x03 (Consecutive Frame)</u><br>
+      <b>Frame Type = 0x03 (Consecutive Frame)</b><br>
       0x00 Last Frame<br>
       0x01 - 0xFF Frame Number
     </td>
@@ -155,12 +155,12 @@
     <td>Data Size</td>
     <td>32 bit</td>
     <td>
-      <u>Frame Type = 0x00 (Control Frame)</u><br>
+      <b>Frame Type = 0x00 (Control Frame)</b><br>
       0x00 Reserved // TODO: this was copied over but the specification is not clear. What about 0x01-0xFFFFFFFF?<br>
-      <u>Frame Type = 0x02 (First Frame)</u><br>
+      <b>Frame Type = 0x02 (First Frame)</b><br>
       (value & 0xFFFF0000) >> 16 is the total bytes (uncompressed) included in all consecutive frames.<br>
       (value & 0x0000FFFF) is the number of consecutive frames following this frame<br>
-      <u>Frame Type = 0x01 or 0x03 (Single or Consecutive Frame)</u><br>
+      <b>Frame Type = 0x01 or 0x03 (Single or Consecutive Frame)</b><br>
       The total bytes in this frame
     </td>
   </tr>
