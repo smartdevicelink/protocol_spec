@@ -1,5 +1,5 @@
 # protocol_spec
-<table width="100%">
+<table width="100%" style="display:table">
   <tr>
     <th colspan="3" width="25%">Byte 1</th>
     <th colspan="1"width="25%">Byte 2</th>
@@ -16,7 +16,7 @@
   </tr>
 </table>
 
-<table width="100%">
+<table style="display:table" width="100%">
   <tr>
     <th width="25%">Byte 5</th>
     <th width="25%">Byte 6</th>
@@ -28,7 +28,7 @@
   </tr>
 </table>
 
-<table width="100%">
+<table width="100%" style="display:table">
   <tr>
     <th width="25%">Byte 9</th>
     <th width="25%">Byte 10</th>
