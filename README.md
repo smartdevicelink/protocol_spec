@@ -74,6 +74,103 @@
   </tr>
 </table>
 
+### 2.3 Frame Header Fields
+<table width="100%">
+  <tr>
+    <th>Field</th>
+    <th>Size</th>
+    <th width="75%">Description</th>
+  </tr>
+  <tr>
+    <td>Version</td>
+    <td>4 bit</td>
+    <td>Protocol Version Number</td>
+  </tr>
+  <tr>
+    <td>C</td>
+    <td>1 bit</td>
+    <td><u>Compression Flag</u> <br> 0x0 This packet is not compressed <br> 0x1 This packet is compressed <br> <b>Note:</b> Only available in Protocol Version 1</td>
+  </tr>
+  <tr>
+    <td>E</td>
+    <td>1 bit</td>
+    <td><u>Encryption Flag</u> <br> 0x0 This packet is not encrypted <br> 0x1 This packet is encrypted <br> <b>Note:</b> Only available in Protocol Version 2</td>
+  </tr>
+  <tr>
+    <td>Frame Type</td>
+    <td>3 bit</td>
+    <td>
+      0x00 Control Frame <br>
+      0x01 Single Frame <br>
+      0x02 First Frame <br>
+      0x03 Consecutive Frame <br>
+      0x04 - 0x07 Reserved
+    </td>
+  </tr>
+  <tr>
+    <td>Service Type</td>
+    <td>8 bit</td>
+    <td>
+      0x00 Control Service<br>
+      0x01 - 0x06 Reserved<br>
+      0x07 Remote Procedure Call (RPC) Service<br>
+      0x08 - 0x09 Reserved<br>
+      0x0A PCM Service<br>
+      0x0B Video Service<br>
+      0x0C - 0x0E Reserved<br>
+      0x0F Bulk Data (Hybrid Service)<br>
+      0x10 - 0xFF Reserved
+    </td>
+  </tr>
+  <tr>
+    <td>Frame Info</td>
+    <td>8 bit</td>
+    <td>
+      <u>Frame Type = 0x00 (Control Frame)</u><br>
+      0x00 Heartbeat<br>
+      0x01 Start Service<br>
+      0x02 Start Service ACK<br>
+      0x03 Start Service NACK<br>
+      0x04 End Service<br>
+      0x05 End Service ACK<br>
+      0x06 End Service NACK<br>
+      0x07 - 0xFD Reserved<br>
+      0xFE Service Data ACK<br>
+      0xFF Heartbeat ACK<br>
+      <u>Frame Type = 0x01 (Single Frame)</u><br>
+      0x00 Reserved // TODO: needs clarification<br>
+      <u>Frame Type = 0x02 (First Frame)</u><br>
+      0x00 Reserved // TODO: needs clarification<br>
+      <u>Frame Type = 0x03 (Consecutive Frame)</u><br>
+      0x00 Last Frame<br>
+      0x01 - 0xFF Frame Number
+    </td>
+  </tr>
+  <tr>
+    <td>Session ID</td>
+    <td>8 bit</td>
+    <td>The session identifier</td>
+  </tr>
+  <tr>
+    <td>Data Size</td>
+    <td>32 bit</td>
+    <td>
+      <u>Frame Type = 0x00 (Control Frame)</u><br>
+      0x00 Reserved // TODO: this was copied over but the specification is not clear. What about 0x01-0xFFFFFFFF?<br>
+      <u>Frame Type = 0x02 (First Frame)</u><br>
+      (value & 0xFFFF0000) >> 16 is the total bytes (uncompressed) included in all consecutive frames.<br>
+      (value & 0x0000FFFF) is the number of consecutive frames following this frame<br>
+      <u>Frame Type = 0x01 or 0x03 (Single or Consecutive Frame)</u><br>
+      The total bytes in this frame
+    </td>
+  </tr>
+  <tr>
+    <td>Message ID</td>
+    <td>32 bit</td>
+    <td>The message identifier, used to uniquely identify this message</td>
+  </tr>
+</table>
+
 ## 3. Establishing Communication
 
 ### 3.1 Transport Layer
