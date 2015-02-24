@@ -156,7 +156,7 @@
     <td>32 bit</td>
     <td>
       <b>Frame Type = 0x00 (Control Frame)</b><br>
-      0x00 The data size for a control frame is always 0 (there is no payload).<br>
+      0x0 - 0xFFFFFFFF reserved. In a gen1.1 head unit a control frame with frame info StartServiceAck(0x02) sends 0x04 as the data size, and the payload contains the Service ID which was ACK'd<br> // TODO: need confirmation on other possible behaviors<br>
       <b>Frame Type = 0x02 (First Frame)</b><br>
       0x08 The data size for a first frame is always 8 bytes. In the payload, the first four bytes denote the Total Size of the data contained in all consecutive frames, and the second four bytes denotes the number of consecutive frames following this one<br>
       <b>Frame Type = 0x01 or 0x03 (Single or Consecutive Frame)</b><br>
