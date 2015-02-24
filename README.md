@@ -84,7 +84,14 @@
   <tr>
     <td>Version</td>
     <td>4 bit</td>
-    <td>Protocol Version Number</td>
+    <td>
+      <b>Protocol Version</b><br>
+      0x1 Protocol version 1 - uses a version 1 Frame Header<br>
+      0x2 Protocol version 2 - uses a version 2 Frame Header<br>
+      0x3 Protocol version 3 - uses a version 2 Frame Header<br>
+      0x4 Protocol version 4 - uses a version 2 Frame Header<br>
+      0x5 - 0xF Reserved
+    </td>
   </tr>
   <tr>
     <td>C</td>
