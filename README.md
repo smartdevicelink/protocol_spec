@@ -138,9 +138,9 @@
       0xFE Service Data ACK<br>
       0xFF Heartbeat ACK<br>
       <b>Frame Type = 0x01 (Single Frame)</b><br>
-      0x00 Reserved // TODO: needs clarification<br>
+      0x00 - 0xFF Reserved<br>
       <b>Frame Type = 0x02 (First Frame)</b><br>
-      0x00 Reserved // TODO: needs clarification<br>
+      0x00 - 0xFF Reserved<br>
       <b>Frame Type = 0x03 (Consecutive Frame)</b><br>
       0x00 Last Frame<br>
       0x01 - 0xFF Frame Number
