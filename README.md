@@ -1,4 +1,4 @@
-# SmartDeviceLink Protocol
+## 1. SmartDeviceLink Protocol
 **Note: this is a work in progress. I will remove this note when I believe this document is accurate**
 
 ## 2. Frames
