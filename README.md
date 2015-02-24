@@ -158,8 +158,7 @@
       <b>Frame Type = 0x00 (Control Frame)</b><br>
       0x00 Reserved // TODO: this was copied over but the specification is not clear. What about 0x01-0xFFFFFFFF?<br>
       <b>Frame Type = 0x02 (First Frame)</b><br>
-      (value & 0xFFFF0000) >> 16 is the total bytes (uncompressed) included in all consecutive frames.<br>
-      (value & 0x0000FFFF) is the number of consecutive frames following this frame<br>
+      0x08 The data size for a first frame is always 8 bytes. In the payload, the first four bytes denote the Total Size of the data contained in all consecutive frames, and the second four bytes denotes the number of consecutive frames following this one<br>
       <b>Frame Type = 0x01 or 0x03 (Single or Consecutive Frame)</b><br>
       The total bytes in this frame
     </td>
