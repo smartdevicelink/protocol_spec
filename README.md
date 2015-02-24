@@ -187,10 +187,36 @@ A physical transport must be established between a head unit and an application.
 Once a transport is established, an application must negotiate the maximum supported protocol version with the head unit. To establish basic communication and register with the head unit, the application must start an RPC service (Service Type: 0x07), using a *Version 1 Protocol Header* with the application's maximum supported version in the version field.
 
 ##### Application -> Head Unit
-| Version | C | Frame Type | Service Type| Frame Info | Session ID | Data Size |
-|-
-|   |no|Control|RPC |Start Service|||
-|0x4|0 |000    |0x07|0x01         |0x00|0x00000000|
+<table width="100%">
+<tr>
+  <td>Version</td>
+  <td>C</td>
+  <td>Frame Type</td>
+  <td>Service Type</td>
+  <td>Frame Info</td>
+  <td>Session Id</td>
+  <td>Data Size</td>
+</tr>
+<tr>
+  <td></td>
+  <td>no</td>
+  <td>Control</td>
+  <td>RPC</td>
+  <td>Start Service</td>
+  <td></td>
+  <td></td>
+</tr>
+<tr>
+  <td>0x4</td>
+  <td>0b0</td>
+  <td>0b000</td>
+  <td>0x07</td>
+  <td>0x01</td>
+  <td>0x00</td>
+  <td>0x00000000</td>
+</tr>
+</table>
+
 #### 3.2.1 Success
 
 #### 3.2.2 Failure
