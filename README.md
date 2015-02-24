@@ -185,7 +185,7 @@ All transported data is formed with a header followed by an optional payload. Th
 A physical transport must be established between a head unit and an application.
 
 ### 3.2 Version Negotiation
-Once a transport is established, an application must negotiate the maximum supported protocol version with the head unit. To establish basic communication and register with the head unit, the application must start an RPC service (Service Type: 0x07), using a *Version 1 Protocol Header* with the application's maximum supported version in the version field.
+Once a transport is established, an application must negotiate the maximum supported protocol version with the head unit. To establish basic communication and register with the head unit, the application must start an RPC service (Service Type: 0x07), using a *Version 1 Protocol Header*.
 
 ##### Application -> Head Unit
 <table width="100%">
@@ -208,7 +208,7 @@ Once a transport is established, an application must negotiate the maximum suppo
   <td></td>
 </tr>
 <tr>
-  <td>0x4</td>
+  <td>0x1</td>
   <td>0b0</td>
   <td>0b000</td>
   <td>0x07</td>
@@ -219,6 +219,8 @@ Once a transport is established, an application must negotiate the maximum suppo
 </table>
 
 #### 3.2.1 Success
+
+If the head unit can start the RPC service it will respond with a Start Service ACK containing its maximum supported protocol version. If its maximum supported version is 1, the packet will contain an 8 byte header, otherwise it will contain a 12 byte header. From this point forward, the application is expected to use the minimum of the head unit's maximum supported version, and its maximum supported version.
 
 #### 3.2.2 Failure
 
