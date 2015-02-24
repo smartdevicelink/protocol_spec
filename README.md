@@ -1,7 +1,7 @@
 # SmartDeviceLink Protocol
 
 ## 2. Frames
-All transported data is formed with a header and optional payload. The combination of header and payload is referred to as a frame.
+All transported data is formed with a header followed by an optional payload. The combination of header and payload is referred to as a frame.
 ### 2.1 Version 1 Frame Header
 <table>
   <tr>
@@ -15,7 +15,7 @@ All transported data is formed with a header and optional payload. The combinati
     <td width="3.125%">C</td>
     <td width="9.375%">Frame Type</td>
     <td>Service Type</td>
-    <td>Control Frame Info</td>
+    <td>Frame Info</td>
     <td>Session ID</td>
   </tr>
 </table>
@@ -46,7 +46,7 @@ All transported data is formed with a header and optional payload. The combinati
     <td width="3.125%">E</td>
     <td width="9.375%">Frame Type</td>
     <td>Service Type</td>
-    <td>Control Frame Info</td>
+    <td>Frame Info</td>
     <td>Session ID</td>
   </tr>
 </table>
@@ -181,9 +181,16 @@ All transported data is formed with a header and optional payload. The combinati
 ## 3. Establishing Communication
 
 ### 3.1 Transport Layer
+A physical transport must be established between a head unit and an application.
 
 ### 3.2 Version Negotiation
+Once a transport is established, an application must negotiate the maximum supported protocol version with the head unit. To establish basic communication and register with the head unit, the application must start an RPC service (Service Type: 0x07), using a *Version 1 Protocol Header* with the application's maximum supported version in the version field.
 
+##### Application -> Head Unit
+| Version | C | Frame Type | Service Type| Frame Info | Session ID | Data Size |
+|-
+|   |no|Control|RPC |Start Service|||
+|0x4|0 |000    |0x07|0x01         |0x00|0x00000000|
 #### 3.2.1 Success
 
 #### 3.2.2 Failure
