@@ -1,6 +1,7 @@
 # SmartDeviceLink Protocol
 
-## 2. Frame Headers
+## 2. Frames
+All transported data is formed with a header and optional payload. The combination of header and payload is referred to as a frame.
 ### 2.1 Version 1 Frame Header
 <table>
   <tr>
