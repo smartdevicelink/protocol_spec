@@ -357,7 +357,7 @@ The payload of a message sent via the RPC service, which directly follows the Fr
   <tr>
     <td>RPC Function ID</td>
     <td>28 bit</td>
-    <td>The Function ID of each RPC is specific to each version of the [RPC Specification](https://github.com/smartdevicelink/sdl_core/blob/develop/src/components/interfaces/MOBILE_API.xml#L2146-2207) but in general do not change from version to version.
+    <td>The Function ID of each RPC is specific to each version of the <a href="https://github.com/smartdevicelink/sdl_core/blob/develop/src/components/interfaces/MOBILE_API.xml#L2146-2207">RPC Specification</a> but in general do not change from version to version.
   </tr>
   <tr>
     <td>Correlation ID</td>
