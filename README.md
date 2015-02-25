@@ -257,6 +257,42 @@ If the head unit can start the RPC service it will respond with a Start Service 
 </table>
 
 #### 3.2.2 Failure
+If a session has already been started, or can't be started, a NACK will be sent in response to the Start Service packet.
+
+##### Head Unit -> Application
+<table width="100%">
+  <tr>
+    <td>Version</td>
+    <td>E</td>
+    <td>Frame Type</td>
+    <td>Service Type</td>
+    <td>Frame Info</td>
+    <td>Session Id</td>
+    <td>Data Size</td>
+    <td>Message ID</td>
+  </tr>
+  <tr>
+    <td></td>
+    <td>no</td>
+    <td>Control</td>
+    <td>RPC</td>
+    <td>Start Service NACK</td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>0x4</td>
+    <td>0b0</td>
+    <td>0b000</td>
+    <td>0x07</td>
+    <td>0x03</td>
+    <td>0x00</td>
+    <td>0x00000000</td>
+    <td>0x00000000</td>
+  </tr>
+</table>
+
 
 ### 3.3 Registration
 
