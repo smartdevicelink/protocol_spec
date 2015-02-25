@@ -308,9 +308,9 @@ The payload of a message sent via the RPC service, which directly follows the Fr
 
 ##### RPC Payload
 
-<table width="100%">
+<table>
   <tr>
-    <td align="center">Binary Header</td>
+    <td align="center" width="5000">Binary Header</td>
   </tr>
   <tr>
     <td align="center">JSON Data</td>
