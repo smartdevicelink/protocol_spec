@@ -337,6 +337,40 @@ The payload of a message sent via the RPC service, which directly follows the Fr
   </tr>
 </table>
 
+##### 4.1.2.1 Binary Header Fields
+<table>
+  <tr>
+    <th>Field</th>
+    <th>Size</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td>RPC Type</td>
+    <td>4 bit</td>
+    <td>
+      0x0 Request<br>
+      0x1 Response<br>
+      0x2 Notification<br>
+      0x3 - 0xF Reserved
+    </td>
+  </tr>
+  <tr>
+    <td>RPC Function ID</td>
+    <td>28 bit</td>
+    <td>Function IDs are specific to each version of the [RPC Specification](https://github.com/smartdevicelink/sdl_core/blob/develop/src/components/interfaces/MOBILE_API.xml#L2146-2207) but in general do not change from version to version.
+  </tr>
+  <tr>
+    <td>Correlation ID</td>
+    <td>32 bits</td>
+    <td>The Correlation ID is used to map a request to its response.<br> Note that even though the valid range of Correlation IDs is 0x00000000 through 0xFFFFFFFF, current head unit implementations reject IDs that are higher than 65528.</td>
+  </tr>
+  <tr>
+    <td>JSON Size</td>
+    <td>32 bits</td>
+    <td>The size of the JSON Data following the Binary Header in the RPC Payload</td>
+  </tr>
+</table>
+
 ### 4.2 Hybrid (Bulk Data) Service
 The Hybrid Service does not need to be explicitly started, all applications that have successfully registered have access to the Hybrid Service.
 
@@ -345,6 +379,21 @@ The Hybrid Service is similar to the RPC Service but adds a bulk data field. The
 The size of the Bulk Data field is the Data Size (Found in the Frame Header) minus the 12 Bytes of the Binary Header minus the JSON Size (Found in the Binary Header).
 
 The Binary Header of a message using the Hybrid Service is the same as the Binary Header of a message using the RPC Service.
+
+##### Hybrid Service Payload
+
+<table>
+  <tr>
+    <td align="center" width="5000">Binary Header</td>
+  </tr>
+  <tr>
+    <td align="center">JSON Data</td>
+  </tr>
+  <tr>
+    <td align="center">Bulk Data</td>
+  </tr>
+</table>
+
 
 ### 4.3 Control Service
 
