@@ -304,7 +304,14 @@ Messages sent have a priority based on their Service Type. Lower values for serv
 ### 4.3 RPC Service
 The RPC service is used to send requests, responses, and notifications between an application and a head unit. Valid messages are defined in the [RPC Specification](https://github.com/smartdevicelink/sdl_core/blob/develop/src/components/interfaces/MOBILE_API.xml).
 
-### 4.4 Hybrid Service
+The payload of a message sent via the RPC service, which directly follows the Frame Header in the packet, consists of a Binary Header, and JSON data representing the RPC.
+
+### 4.4 Hybrid (Bulk Data) Service
+The Hybrid Service does not need to be explicitly started, all applications that have successfully registered have access to the Hybrid Service.
+
+The Hybrid Service is similar to the RPC Service but adds a bulk data field. The payload of a message sent via the Hybrid service consists of a Binary Header, JSON Data, and Bulk Data.
+
+The size of the Bulk Data field is the Data Size (Found in the Frame Header) minus the 12 Bytes of the Binary Header minus the JSON Size (Found in the Binary Header).
 
 ### 4.5 Control Service
 
