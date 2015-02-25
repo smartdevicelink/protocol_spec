@@ -299,15 +299,7 @@ If a session has already been started, or can't be started, a NACK will be sent 
 Each application registers for continued communication with the head unit by sending a RegisterAppInterface Request RPC to the head unit via the RPC Service. Additional services can only be started after a successful RegisterAppInterface Response RPC has been sent from the head unit to the application.
 
 ## 4. Services
-
-
-### 4.1 Starting a Service
-
-#### 4.1.1 Success
-
-#### 4.1.2 Failure
-
-### 4.2 Ending a Service
+Messages sent have a priority based on their Service Type. Lower values for service type have higher delivery priority. A message's payload's format is based on the different service types defined below.
 
 ### 4.3 RPC Service
 
