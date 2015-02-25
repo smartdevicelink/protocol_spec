@@ -189,40 +189,76 @@ Once a transport is established, an application must negotiate the maximum suppo
 
 ##### Application -> Head Unit
 <table width="100%">
-<tr>
-  <td>Version</td>
-  <td>C</td>
-  <td>Frame Type</td>
-  <td>Service Type</td>
-  <td>Frame Info</td>
-  <td>Session Id</td>
-  <td>Data Size</td>
-</tr>
-<tr>
-  <td></td>
-  <td>no</td>
-  <td>Control</td>
-  <td>RPC</td>
-  <td>Start Service</td>
-  <td></td>
-  <td></td>
-</tr>
-<tr>
-  <td>0x1</td>
-  <td>0b0</td>
-  <td>0b000</td>
-  <td>0x07</td>
-  <td>0x01</td>
-  <td>0x00</td>
-  <td>0x00000000</td>
-</tr>
+  <tr>
+    <td>Version</td>
+    <td>C</td>
+    <td>Frame Type</td>
+    <td>Service Type</td>
+    <td>Frame Info</td>
+    <td>Session Id</td>
+    <td>Data Size</td>
+  </tr>
+  <tr>
+    <td></td>
+    <td>no</td>
+    <td>Control</td>
+    <td>RPC</td>
+    <td>Start Service</td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>0x1</td>
+    <td>0b0</td>
+    <td>0b000</td>
+    <td>0x07</td>
+    <td>0x01</td>
+    <td>0x00</td>
+    <td>0x00000000</td>
+  </tr>
 </table>
 
 #### 3.2.1 Success
 
 If the head unit can start the RPC service it will respond with a Start Service ACK containing its maximum supported protocol version. If its maximum supported version is 1, the packet will contain an 8 byte header, otherwise it will contain a 12 byte header. From this point forward, the application is expected to use the minimum of the head unit's maximum supported version, and its maximum supported version.
 
+##### Head Unit -> Application
+<table width="100%">
+  <tr>
+    <td>Version</td>
+    <td>E</td>
+    <td>Frame Type</td>
+    <td>Service Type</td>
+    <td>Frame Info</td>
+    <td>Session Id</td>
+    <td>Data Size</td>
+    <td>Message ID</td>
+  </tr>
+  <tr>
+    <td></td>
+    <td>no</td>
+    <td>Control</td>
+    <td>RPC</td>
+    <td>Start Service ACK</td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>0x4</td>
+    <td>0b0</td>
+    <td>0b000</td>
+    <td>0x07</td>
+    <td>0x02</td>
+    <td>0x00</td>
+    <td>0x00000000</td>
+    <td>0x00000000</td>
+  </tr>
+</table>
+
 #### 3.2.2 Failure
+
+### 3.3 Registration
 
 ## 4. Services
 
