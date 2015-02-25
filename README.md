@@ -301,24 +301,57 @@ Each application registers for continued communication with the head unit by sen
 ## 4. Services
 Messages sent have a priority based on their Service Type. Lower values for service type have higher delivery priority. A message's payload's format is based on the different service types defined below.
 
-### 4.3 RPC Service
+### 4.1 RPC Service
 The RPC service is used to send requests, responses, and notifications between an application and a head unit. Valid messages are defined in the [RPC Specification](https://github.com/smartdevicelink/sdl_core/blob/develop/src/components/interfaces/MOBILE_API.xml).
 
 The payload of a message sent via the RPC service, which directly follows the Frame Header in the packet, consists of a Binary Header, and JSON data representing the RPC.
 
-### 4.4 Hybrid (Bulk Data) Service
+##### RPC Payload
+
+<table width="100%">
+  <tr>
+    <td align="center">Binary Header</td>
+  </tr>
+  <tr>
+    <td align="center">JSON Data</td>
+  </tr>
+</table>
+
+#### 4.1.2 Binary Header
+<table>
+  <tr>
+    <th colspan="2" width="25%">Byte 1</th>
+    <th width="25%">Byte 2</th>
+    <th width="25%">Byte 3</th>
+    <th width="25%">Byte 4</th>
+  </tr>
+  <tr>
+    <td width="12.5%">RPC Type</td>
+    <td colspan="4" align="center">RPC Function ID</td>
+  </tr>
+  <tr>
+    <td colspan="5" align="center">Correlation ID</td>
+  </tr>
+  <tr>
+    <td colspan="5" align="center">JSON Size</td>
+  </tr>
+</table>
+
+### 4.2 Hybrid (Bulk Data) Service
 The Hybrid Service does not need to be explicitly started, all applications that have successfully registered have access to the Hybrid Service.
 
 The Hybrid Service is similar to the RPC Service but adds a bulk data field. The payload of a message sent via the Hybrid service consists of a Binary Header, JSON Data, and Bulk Data.
 
 The size of the Bulk Data field is the Data Size (Found in the Frame Header) minus the 12 Bytes of the Binary Header minus the JSON Size (Found in the Binary Header).
 
-### 4.5 Control Service
+The Binary Header of a message using the Hybrid Service is the same as the Binary Header of a message using the RPC Service.
 
-### 4.6 Audio Service
+### 4.3 Control Service
 
-### 4.7 H.264 Service
+### 4.4 Audio Service
 
-### 4.8 Reserved Services
+### 4.5 H.264 Service
+
+### 4.6 Reserved Services
 
 ## 5 Ending Communication
