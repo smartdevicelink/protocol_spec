@@ -307,6 +307,7 @@ Each application registers for continued communication with the head unit by sen
 ### 3.4 Heartbeat
 >Required: Protocol Versions 3 and higher
 
+
 After an application registers successfully
 
 ## 4. Services
@@ -331,6 +332,8 @@ The payload of a message sent via the RPC service, which directly follows the Fr
 </table>
 
 #### 4.1.2 Binary Header
+>Available: Protocol Version 2 and greater
+
 <table>
   <tr>
     <th colspan="2" width="25%">Byte 1</th>
@@ -375,7 +378,7 @@ The payload of a message sent via the RPC service, which directly follows the Fr
   <tr>
     <td>Correlation ID</td>
     <td>32 bits</td>
-    <td>The Correlation ID is used to map a request to its response.<br> Note that even though the valid range of Correlation IDs is 0x00000000 through 0xFFFFFFFF, current head unit implementations reject IDs that are higher than 65528.</td>
+    <td>The Correlation ID is used to map a request to its response. In Protocol Version 1, when the Binary Header did not exist, the Correlation ID was included as part of the JSON and has a max value of 65536</td>
   </tr>
   <tr>
     <td>JSON Size</td>
@@ -411,6 +414,8 @@ The Binary Header of a message using the Hybrid Service is the same as the Binar
 
 ### 4.3 Audio Service (PCM)
 >Available: Protocol Version 3 and greater
+
+The application can start the audio service to send PCM audio data to the head unit.
 
 ### 4.4 Video Service (H.264)
 >Available: Protocol Version 3 and greater
