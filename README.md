@@ -184,9 +184,13 @@ All transported data is formed with a header followed by an optional payload. Th
 ## 3. Establishing Communication
 
 ### 3.1 Transport Layer
+>Required: All Protocol Versions
+
 A physical transport must be established between a head unit and an application.
 
 ### 3.2 Version Negotiation
+>Required: All Protocol Versions
+
 Once a transport is established, each application must negotiate the maximum supported protocol version with the head unit. To establish basic communication and register with the head unit, the application must start an RPC service (Service Type: 0x07), using a *Version 1 Protocol Header*.
 
 ##### Application -> Head Unit
@@ -296,12 +300,21 @@ If a session has already been started, or can't be started, a NACK will be sent 
 </table>
 
 ### 3.3 Registration
+>Required: All Protocol Versions
+
 Each application registers for continued communication with the head unit by sending a RegisterAppInterface Request RPC to the head unit via the RPC Service. Additional services can only be started after a successful RegisterAppInterface Response RPC has been sent from the head unit to the application.
+
+### 3.4 Heartbeat
+>Required: Protocol Versions 3 and higher
+
+After an application registers successfully
 
 ## 4. Services
 Messages sent have a priority based on their Service Type. Lower values for service type have higher delivery priority. A message's payload's format is based on the different service types defined below.
 
 ### 4.1 RPC Service
+>Required: All Protocol Versions
+
 The RPC service is used to send requests, responses, and notifications between an application and a head unit. Valid messages are defined in the [RPC Specification](https://github.com/smartdevicelink/sdl_core/blob/develop/src/components/interfaces/MOBILE_API.xml).
 
 The payload of a message sent via the RPC service, which directly follows the Frame Header in the packet, consists of a Binary Header, and JSON data representing the RPC.
@@ -372,6 +385,8 @@ The payload of a message sent via the RPC service, which directly follows the Fr
 </table>
 
 ### 4.2 Hybrid (Bulk Data) Service
+>Required: Protocol Version 2 and greater
+
 The Hybrid Service does not need to be explicitly started, all applications that have successfully registered have access to the Hybrid Service.
 
 The Hybrid Service is similar to the RPC Service but adds a bulk data field. The payload of a message sent via the Hybrid service consists of a Binary Header, JSON Data, and Bulk Data.
@@ -394,13 +409,12 @@ The Binary Header of a message using the Hybrid Service is the same as the Binar
   </tr>
 </table>
 
+### 4.3 Audio Service (PCM)
+>Available: Protocol Version 3 and greater
 
-### 4.3 Control Service
+### 4.4 Video Service (H.264)
+>Available: Protocol Version 3 and greater
 
-### 4.4 Audio Service
-
-### 4.5 H.264 Service
-
-### 4.6 Reserved Services
+### 4.5 Reserved Services
 
 ## 5 Ending Communication
