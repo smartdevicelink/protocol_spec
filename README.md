@@ -1,6 +1,8 @@
 ## 1. SmartDeviceLink Protocol
 **Note: this is a work in progress. I will remove this note when I believe this document is accurate**
 
+The SmartDeviceLink protocol specification describes the method for establishing communication between an application and head unit and registering the application for continued communication with the head unit
+
 ## 2. Frames
 All transported data is formed with a header followed by an optional payload. The combination of header and payload is referred to as a frame.
 ### 2.1 Version 1 Frame Header
@@ -185,7 +187,7 @@ All transported data is formed with a header followed by an optional payload. Th
 A physical transport must be established between a head unit and an application.
 
 ### 3.2 Version Negotiation
-Once a transport is established, an application must negotiate the maximum supported protocol version with the head unit. To establish basic communication and register with the head unit, the application must start an RPC service (Service Type: 0x07), using a *Version 1 Protocol Header*.
+Once a transport is established, each application must negotiate the maximum supported protocol version with the head unit. To establish basic communication and register with the head unit, the application must start an RPC service (Service Type: 0x07), using a *Version 1 Protocol Header*.
 
 ##### Application -> Head Unit
 <table width="100%">
@@ -245,7 +247,7 @@ If the head unit can start the RPC service it will respond with a Start Service 
     <td></td>
   </tr>
   <tr>
-    <td>0x4</td>
+    <td>0b0100</td>
     <td>0b0</td>
     <td>0b000</td>
     <td>0x07</td>
@@ -282,7 +284,7 @@ If a session has already been started, or can't be started, a NACK will be sent 
     <td></td>
   </tr>
   <tr>
-    <td>0x4</td>
+    <td>0x0100</td>
     <td>0b0</td>
     <td>0b000</td>
     <td>0x07</td>
@@ -293,10 +295,11 @@ If a session has already been started, or can't be started, a NACK will be sent 
   </tr>
 </table>
 
-
 ### 3.3 Registration
+Each application registers for continued communication with the head unit by sending a RegisterAppInterface Request RPC to the head unit via the RPC Service. Additional services can only be started after a successful RegisterAppInterface Response RPC has been sent from the head unit to the application.
 
 ## 4. Services
+
 
 ### 4.1 Starting a Service
 
