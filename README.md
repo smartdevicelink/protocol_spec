@@ -302,6 +302,7 @@ Each application registers for continued communication with the head unit by sen
 Messages sent have a priority based on their Service Type. Lower values for service type have higher delivery priority. A message's payload's format is based on the different service types defined below.
 
 ### 4.3 RPC Service
+The RPC service is used to send requests, responses, and notifications between an application and a head unit. Valid messages are defined in the [RPC Specification](https://github.com/smartdevicelink/sdl_core/blob/develop/src/components/interfaces/MOBILE_API.xml).
 
 ### 4.4 Hybrid Service
 
