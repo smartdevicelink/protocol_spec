@@ -284,7 +284,7 @@ If a session has already been started, or can't be started, a NACK will be sent 
     <td></td>
   </tr>
   <tr>
-    <td>0x0100</td>
+    <td>0b0100</td>
     <td>0b0</td>
     <td>0b000</td>
     <td>0x07</td>
