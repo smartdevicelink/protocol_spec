@@ -210,7 +210,7 @@ Once a transport is established, each application must negotiate the maximum sup
     <td></td>
   </tr>
   <tr>
-    <td>0x1</td>
+    <td>0b0001</td>
     <td>0b0</td>
     <td>0b000</td>
     <td>0x07</td>
