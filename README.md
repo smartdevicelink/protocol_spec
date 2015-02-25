@@ -415,10 +415,12 @@ The Binary Header of a message using the Hybrid Service is the same as the Binar
 ### 4.3 Audio Service (PCM)
 >Available: Protocol Version 3 and greater
 
-The application can start the audio service to send PCM audio data to the head unit.
+The application can start the audio service to send PCM audio data to the head unit. The payload for the Audio Service is only PCM audio data.
 
 ### 4.4 Video Service (H.264)
 >Available: Protocol Version 3 and greater
+
+The application can start the video service to send H.264 video data to the head unit. The payload for the Video Service is only H.264 video data.
 
 ### 4.5 Reserved Services
 
