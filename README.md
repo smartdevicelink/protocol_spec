@@ -167,7 +167,7 @@ All transported data is formed with a header followed by an optional payload. Th
     <td>32 bit</td>
     <td>
       <b>Frame Type = 0x00 (Control Frame)</b><br>
-      0x0 - 0xFFFFFFFF reserved. In a gen1.1 head unit a control frame with frame info StartServiceAck(0x02) sends 0x04 as the data size, and the payload contains the hash of the service which was ACK'd.<br> // TODO: need confirmation on other possible behaviors<br>
+      0x0 - 0xFFFFFFFF reserved.<br>
       <b>Frame Type = 0x02 (First Frame)</b><br>
       0x08 The data size for a first frame is always 8 bytes. In the payload, the first four bytes denote the Total Size of the data contained in all consecutive frames, and the second four bytes denotes the number of consecutive frames following this one<br>
       <b>Frame Type = 0x01 or 0x03 (Single or Consecutive Frame)</b><br>
@@ -226,7 +226,7 @@ Once a transport is established, each application must negotiate the maximum sup
 
 #### 3.2.1 Success
 
-If the head unit can start the RPC service it will respond with a Start Service ACK containing its maximum supported protocol version. If its maximum supported version is 1, the packet will contain an 8 byte header, otherwise it will contain a 12 byte header. From this point forward, the application is expected to use the minimum of the head unit's maximum supported version, and its maximum supported version.
+If the head unit can start the RPC service it will respond with a Start Service ACK containing its maximum supported protocol version. If its maximum supported version is 1, the packet will contain an 8 byte header, otherwise it will contain a 12 byte header. From this point forward, the application is expected to use the minimum of the head unit's maximum supported version, and its maximum supported version. The payload of the Start Service ACK will contain a hash of the service which was started on the head unit if the payload size is greater than 0. This hash should be stored by an application and is needed in the end communication flow.
 
 ##### Head Unit -> Application
 <table width="100%">
@@ -422,6 +422,5 @@ The application can start the audio service to send PCM audio data to the head u
 
 The application can start the video service to send H.264 video data to the head unit. The payload for the Video Service is only H.264 video data.
 
-### 4.5 Reserved Services
-
 ## 5 Ending Communication
+To close out a communication session with the head unit, an application sends
