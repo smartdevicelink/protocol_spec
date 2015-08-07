@@ -307,8 +307,86 @@ Each application registers for continued communication with the head unit by sen
 ### 3.4 Heartbeat
 >Required: Protocol Versions 3 and higher
 
+After a successful start service exchange between the application and head unit both the application and head unit are required to be able to respond to heartbeat messages if the negotiated protocol version is 3 or higher. After sending a heartbeat, if the application or head unit does not respond within a timeout (custom per app/head unit), the sender will disconnect. The sender's timer for the heartbeat timeout should be reset every time any message is received. Heartbeats are sent using the Control Service Type (0x00)
 
-After an application registers successfully
+#### 3.4.1 Heartbeat Request
+
+>Note the request can originate from either the Head Unit or the Application
+
+##### Head Unit -> Application
+<table width="100%">
+  <tr>
+    <td>Version</td>
+    <td>E</td>
+    <td>Frame Type</td>
+    <td>Service Type</td>
+    <td>Frame Info</td>
+    <td>Session Id</td>
+    <td>Data Size</td>
+    <td>Message ID</td>
+  </tr>
+  <tr>
+    <td></td>
+    <td>no</td>
+    <td>Control</td>
+    <td>Control</td>
+    <td>Heartbeat</td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>0b0100</td>
+    <td>0b0</td>
+    <td>0b000</td>
+    <td>0x00</td>
+    <td>0x00</td>
+    <td>0x00</td>
+    <td>0x00000000</td>
+    <td>0x00000000</td>
+  </tr>
+</table>
+
+#### 3.4.2 Heartbeat ACK
+
+>Note the response ACK will originate from the Head Unit or the Application based on the origin of the request
+
+##### Application -> Head Unit
+<table width="100%">
+  <tr>
+    <td>Version</td>
+    <td>E</td>
+    <td>Frame Type</td>
+    <td>Service Type</td>
+    <td>Frame Info</td>
+    <td>Session Id</td>
+    <td>Data Size</td>
+    <td>Message ID</td>
+  </tr>
+  <tr>
+    <td></td>
+    <td>no</td>
+    <td>Control</td>
+    <td>Control</td>
+    <td>Heartbeat ACK</td>
+    <td></td>
+    <td></td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>0b0100</td>
+    <td>0b0</td>
+    <td>0b000</td>
+    <td>0x00</td>
+    <td>0xFF</td>
+    <td>0x00</td>
+    <td>0x00000000</td>
+    <td>0x00000000</td>
+  </tr>
+</table>
+
+#### 3.4.3 Heartbeat NACK
+There is no heartbeat NACK.
 
 ## 4. Services
 Messages sent have a priority based on their Service Type. Lower values for service type have higher delivery priority. A message's payload's format is based on the different service types defined below.
