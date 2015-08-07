@@ -181,6 +181,73 @@ All transported data is formed with a header followed by an optional payload. Th
   </tr>
 </table>
 
+### 2.4 Structured Payloads with Subtags
+Structured payloads will contain an aribtrary number of sets of subtags. A subtag is formed as follows. The total length of the payload is still determined using the data size in the frame header.
+
+<table>
+  <tr width="100%">
+    <th>Byte 1</th>
+  </tr>
+  <tr>
+    <td>Subtag ID</td>
+  </tr>
+  <tr>
+    <th>Byte 2</th>
+  </tr>
+  <tr>
+    <td>Number of Octets (n)</td>
+  </tr>
+  <tr>
+    <th>Bytes 3 through n</th>
+  </tr>
+  <tr>
+    <td>Long form length (number of data octects)</td>
+  </tr>
+  <tr>
+    <th>Bytes n + 1 through n + number of data octects</th>
+  </tr>
+  <tr>
+    <td>Data</td>
+  </tr>
+</table>
+
+The first octect is the subtag ID. This is used to identify how the data should be used. For example, the subtag ID for MTU Size tells the mobile device to interpret the data as the number of bytes to use for the MTU Size for a given transport.
+
+The next octect gives the number of octects, in long form (base 256), which will define the length of the data for the subtag. For example, a value of 00000010 means that the next 2 octects, when intepreted, will output the length of the data.
+
+Once the number of length octects are determined, you can determine the number of data octects. The most significant bit for the long form data length is always first.
+
+If `n` is the number of length octects and `data` is an array of bytes containing the long form data length, the total data length can be determined as
+
+```C
+int length = 0;
+for (int i = 0; i < n; i++) {
+  length += data[i] * pow(256, n - i - 1);
+}
+```
+
+#### 2.4.1 Available Subtags
+
+The following subtags are currently available for use.
+
+<table width="100%">
+  <tr>
+    <th>id</th>
+    <th>name</th>
+    <th>description</th>
+  </tr>
+  <tr>
+    <td>0x01</td>
+    <td>MTU Size</td>
+    <td>The MTU Size which should be used by the mobile device</td>
+  <tr>
+  <tr>
+    <td>0x02</td>
+    <td>Hash ID</td>
+    <td>A hash ID unique to the service being connected and the application connecting to that service</td>
+  </tr>
+</table>
+
 ## 3. Establishing Communication
 
 ### 3.1 Transport Layer
@@ -226,7 +293,7 @@ Once a transport is established, each application must negotiate the maximum sup
 
 #### 3.2.1 Success
 
-If the head unit can start the RPC service it will respond with a Start Service ACK containing its maximum supported protocol version. If its maximum supported version is 1, the packet will contain an 8 byte header, otherwise it will contain a 12 byte header. From this point forward, the application is expected to use the minimum of the head unit's maximum supported version, and its maximum supported version. The payload of the Start Service ACK will contain a hash of the service which was started on the head unit if the payload size is greater than 0. This hash should be stored by an application and is needed in the end communication flow.
+If the head unit can start the RPC service it will respond with a Start Service ACK containing its maximum supported protocol version. If its maximum supported version is 1, the packet will contain an 8 byte header, otherwise it will contain a 12 byte header. From this point forward, the application is expected to use the minimum of the head unit's maximum supported version, and its maximum supported version. The payload of the Start Service ACK will be structured with subtags to contain information such as a hash id for the service unique to the application which started it, and the mtu size which should be used by the application to continue communication henceforth.
 
 ##### Head Unit -> Application
 <table width="100%">
