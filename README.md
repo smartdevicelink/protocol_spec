@@ -1,4 +1,4 @@
-#SmartDeviceLink Protocol
+# SmartDeviceLink Protocol
 
 **Current Version: 4.0.0**
 
@@ -272,19 +272,19 @@ A frame of type Single Frame contains all the data for a particular packet in th
 ### 3.3 Multiple Frame Packets
 Some payloads will be larger than the maximum transport unit will allow. If that is the case, the payload will be broken up over multiple frames. These frame types are First and Consecutive. 
 
-<table width="100%">
-  <tr style="visibility:hidden;">
-    <td width="5%"></td>
-    <td width="5%"></td>
-    <td width="5%"></td>
-    <td ></td>
-    <td width="5%"></td>
-    <td></td>
-    <td width="5%"></td>
-    <td></td>
-    <td width="5%"></td>
-    <td></td>
-    <td></td>
+<table width="100%" class = "multi-frame-table">
+  <tr class = "multi-frame-tr" style="visibility:hidden;">
+    <td class = "multi-frame-td" width="5%"></td>
+    <td class = "multi-frame-td"width="5%"></td>
+    <td class = "multi-frame-td"width="5%"></td>
+    <td class = "multi-frame-td"></td>
+    <td class = "multi-frame-td"width="5%"></td>
+    <td class = "multi-frame-td"></td>
+    <td class = "multi-frame-td"width="5%"></td>
+    <td class = "multi-frame-td"></td>
+    <td class = "multi-frame-td" width="5%"></td>
+    <td class = "multi-frame-td"></td>
+    <td class = "multi-frame-td"></td>
   </tr>
     <tr>
     <td style="visibility:hidden;" colspan="3"></td>
