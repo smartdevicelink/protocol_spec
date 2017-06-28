@@ -206,7 +206,7 @@ The max transport unit (MTU) of a frame varies based on version. The MTU include
 |**1**| 1500|
 |**2**| 1500|
 |**3**| 131,084 |
-|**4 +**| 131,084|
+|**4**| 131,084|
 
 
 #### 2.4.1 Payload Size
@@ -217,7 +217,7 @@ The payload size is determined by the MTU - Frame Header Size.
 |**1**| 1488|
 |**2**| 1488|
 |**3**| 131,072 |
-|**4 +**| 131,072|
+|**4**| 131,072|
 
 #### 2.4.2 Encrypted MTU
 While the supported MTU is the maximum size for that version, if a frame is encrypted it will be subject to the MTU of that encryption protocol as well. That means the MTU will have to be the minimum between SDL's MTU  and the encryption protocol's MTU. 
@@ -229,12 +229,12 @@ Control frames are the lowest-level type of packets. They can be sent over any o
 #### 3.1.1 Special Header Definitions:
 | Header Value |Expected values| Description |
 |--------------|---------------|-------------|
-|Frame Info| `0x00` - `0x06`, `0xFE`, `0xFF`|See below chart|
-|Data Size| `0x00`, `0x04`|`0x00` - Majority of control packets do not have payloads<br><br> `0x04` - HashID is included in the payload for a `StartServiceACK`
+|Frame Info| `0x00` - `0x06`, `0xFE`, `0xFF`|See below "Frame Info Definitions"|
+|Data Size| `0x00`, `0x04`|`0x00` - Majority of control packets do not have payloads<br><br> `0x04` - Used for `StartServiceACK` where the payload is a HashID |
 
 
 #### 3.1.2 Frame Info Definitions:
-| Frame Info | Name | Description |
+| Frame Info Value| Name | Description |
 |------------|------|-------------|
 | 0x00| Heartbeat| A ping packet that is sent to ensure the connection is still active and the service is still valid|
 | 0x01 | Start Service |Requests that a specific type of service is started |
@@ -361,7 +361,7 @@ The First Frame in a multiple frame payload contains information about the entir
 	<tr align="center">
 		<td style="visibility:hidden;"></td>
 		<td colspan ="4" >Total size of the original payload being parsed</td>
-		<td colspan ="4" >Number of Consecutive Frames</td>
+		<td colspan ="4" >Number of Consecutive Frames in this sequence</td>
 	</tr>
 </table>
 
@@ -379,8 +379,8 @@ The Consecutive Frames in a multiple frame payload contain the actual raw data o
 
 | Header Value |Expected values| Description |
 |--------------|---------------|-------------|
-|Frame Info| `0x00` - `0xFF`|Values `0x01` - `0xFF` are used incrementally as each consecutive frame is created and sent in the sequence. eg The first consecutive packet in the sequence will have the value `0x01`, the next consecutive frame that contains the next chunk of data in the sequence will have the value `0x02`. <br><br>If the sequence reaches `0xFF` with more frames to create, it shall rollover to `0x01` **not** `0x00` as it is reserved. <br><br>`0x00` is used for the last consecutive frame only in a multi-frame sequence and the last frame must have this value.|
-|Data Size| `0x01` - `0xFFFFFFFF`|Payload size in bytes for this frame only|
+|Frame Info| `0x00` - `0xFF`|Values `0x01` - `0xFF` are used incrementally as each consecutive frame is created and sent in the sequence. eg The first consecutive packet in the sequence will have the value `0x01`, the next consecutive frame that contains the next chunk of data in the sequence will have the value `0x02`. <br><br>If the sequence reaches `0xFF` with more frames to create, it shall rollover to `0x01` **not** `0x00` as it is reserved. <br><br>`0x00` is only used for the last consecutive frame in a multi-frame sequence and the last frame must have this value.|
+|Data Size| `0x01` - `0xFFFFFFFF`|Payload size in bytes for only this frame |
 
 ## 4. Establishing Communication
 
@@ -406,13 +406,13 @@ Once a transport is established, each application must negotiate the maximum sup
     <th>Data Size</th>
   </tr>
   <tr>
-    <td></td>
+    <td>1</td>
     <td>no</td>
     <td>Control</td>
     <td>RPC</td>
     <td>Start Service</td>
-    <td></td>
-    <td></td>
+    <td>0</td>
+    <td>0</td>
   </tr>
   <tr>
     <td>0b0001</td>
@@ -444,14 +444,14 @@ The payload of the `StartServiceACK` will contain a hash of the service which wa
     <th>Message ID</th>
   </tr>
   <tr>
-    <td></td>
+    <td>Max Module Version (4)</td>
     <td>no</td>
     <td>Control</td>
     <td>RPC</td>
     <td>Start Service ACK</td>
-    <td></td>
-    <td></td>
-    <td></td>
+    <td>Assigned Session</td>
+    <td>4</td>
+    <td>2</td>
   </tr>
   <tr>
     <td>0b0100</td>
@@ -459,9 +459,9 @@ The payload of the `StartServiceACK` will contain a hash of the service which wa
     <td>0b000</td>
     <td>0x07</td>
     <td>0x02</td>
-    <td>0x00</td>
-    <td>0x00000000</td>
-    <td>0x00000000</td>
+    <td>0x01</td>
+    <td>0x00000004</td>
+    <td>0x0000000n</td>
   </tr>
 </table>
 
@@ -481,14 +481,14 @@ If a session has already been started, or can't be started, a `StartServiceNAK` 
     <th>Message ID</th>
   </tr>
   <tr>
-    <td></td>
+    <td>Max Module Version (4)</td>
     <td>no</td>
     <td>Control</td>
     <td>RPC</td>
     <td>Start Service NAK</td>
-    <td></td>
-    <td></td>
-    <td></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
   </tr>
   <tr>
     <td>0b0100</td>
@@ -508,11 +508,12 @@ If a session has already been started, or can't be started, a `StartServiceNAK` 
 Each application registers for continued communication with the head unit by sending a `RegisterAppInterface` Request RPC to the head unit via the RPC Service. Additional services can only be started after a successful `RegisterAppInterface` Response RPC has been sent from the head unit to the application.
 
 ### 4.4 Starting other services
-While the RPC service is the default service that is started to establish a connection and a session, the application may wish to start other services. Similar to the process in Section 3, all services that are to be to started in a session require a `StartService` packet to be sent from the application. If the module supports and allows that service type to be started, it will respond with a `StartServiceACK` that has a payload of the hash ID for that service. If the module is unable to start that service or that application does not have access to that service, it will respond with a `StartServiceNAK`. 
+While the RPC service is the default service that is started to establish a connection and a session, the application may wish to start other services. Similar to the process in Section 4, all services that are to be to started in a session require a `StartService` packet to be sent from the application. If the module supports and allows that service type to be started, it will respond with a `StartServiceACK` that has a payload of the hash ID for that service. If the module is unable to start that service or that application does not have access to that service, it will respond with a `StartServiceNAK`. 
 
 ### 4.5 Heartbeat
 >**Deprecated: Protocol Versions 4 and higher** <br>
->Required: Protocol Version 3
+>Required: Protocol Version 3<br>
+>Added: Protocol Version 3
 
 After a successful start service exchange between the application and head unit both the application and head unit are required to be able to respond to heartbeat messages if the negotiated protocol version is 3. After sending a heartbeat, if the application or head unit does not respond within a timeout (custom per app/head unit), the sender will disconnect. The sender's timer for the heartbeat timeout should be reset every time any message is received. Heartbeats are sent using the Control Service Type (0x00)
 
@@ -533,14 +534,14 @@ After a successful start service exchange between the application and head unit 
     <th>Message ID</th>
   </tr>
   <tr>
-    <td></td>
+    <td>4</td>
     <td>no</td>
     <td>Control</td>
     <td>Control</td>
     <td>Heartbeat</td>
-    <td></td>
-    <td></td>
-    <td></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
   </tr>
   <tr>
     <td>0b0100</td>
@@ -571,14 +572,14 @@ After a successful start service exchange between the application and head unit 
     <th>Message ID</th>
   </tr>
   <tr>
-    <td></td>
+    <td>4</td>
     <td>no</td>
     <td>Control</td>
     <td>Control</td>
     <td>Heartbeat ACK</td>
-    <td></td>
-    <td></td>
-    <td></td>
+    <td>0</td>
+    <td>0</td>
+    <td>0</td>
   </tr>
   <tr>
     <td>0b0100</td>
@@ -623,7 +624,7 @@ The payload of a message sent via the RPC service, which directly follows the Fr
   </tr>
 </table>
 
-#### 5.2.2 Binary Header
+#### 5.2.1 Binary Header
 >Required: Protocol Version 2 and greater
 
 <table>
@@ -645,7 +646,7 @@ The payload of a message sent via the RPC service, which directly follows the Fr
   </tr>
 </table>
 
-##### 5.2.2.1 Binary Header Fields
+##### 5.2.1.1 Binary Header Fields
 <table>
   <tr>
     <th>Field</th>
@@ -682,7 +683,7 @@ The payload of a message sent via the RPC service, which directly follows the Fr
 ### 5.3 Hybrid (Bulk Data) Service
 >Required: Protocol Version 2 and greater
 
-The Hybrid Service does not need to be explicitly started; all applications that have successfully registered have access to the Hybrid Service.
+The Hybrid Service does not need to be explicitly started; all applications that have successfully started the RPC Service have access to the Hybrid Service.
 
 The Hybrid Service is similar to the RPC Service but adds a bulk data field. The payload of a message sent via the Hybrid service consists of a Binary Header, JSON Data, and Bulk Data.
 
