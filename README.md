@@ -1,11 +1,26 @@
-## 1. SmartDeviceLink Protocol
-**Note: this is a work in progress. I will remove this note when I believe this document is accurate**
+#SmartDeviceLink Protocol
 
-The SmartDeviceLink protocol specification describes the method for establishing communication between an application and head unit and registering the application for continued communication with the head unit
+**Current Version: 4.0.0**
+
+## 1. Overview
+The SmartDeviceLink protocol specification describes the method for establishing communication between an application and head unit and registering the application for continued communication with the head unit. The protocol is used as the base formation of packets sent from one module to another. 
+
+All new SDL implementations should implement the newest version of the protocol.
+
+### 1.1 Common Terms
+
+| Term | Description |
+|------|-------------|
+|**Module / Head Unit**| Hardware implementing the sdl_core software|
+|**Application**| Smart device application that implements the proxy library (iOS or Android)|
 
 ## 2. Frames
 All transported data is formed with a header followed by an optional payload. The combination of header and payload is referred to as a frame.
+
 ### 2.1 Version 1 Frame Header
+>Deprecated: Protocol versions 2 and higher. Only used as initial `StartService` packet for establishing communication and version negotiation from application
+
+
 <table>
   <tr>
     <th colspan="3" width="25%">Byte 1</th>
@@ -36,6 +51,7 @@ All transported data is formed with a header followed by an optional payload. Th
 </table>
 
 ### 2.2 Version 2 Frame Header
+>Required: Protocol versions 2 and higher
 
 <table>
   <tr>
@@ -105,7 +121,7 @@ All transported data is formed with a header followed by an optional payload. Th
   <tr>
     <td>E</td>
     <td>1 bit</td>
-    <td><b>Encryption Flag</b> <br> 0x0 This packet is not encrypted <br> 0x1 This packet is encrypted <br> <b>Note:</b> Only available in Protocol Version 2</td>
+    <td><b>Encryption Flag</b> <br> 0x0 This packet is not encrypted <br> 0x1 This packet is encrypted <br> <b>Note:</b> Only available in Protocol Version 2 and higher</td>
   </tr>
   <tr>
     <td>Frame Type</td>
@@ -141,10 +157,10 @@ All transported data is formed with a header followed by an optional payload. Th
       0x00 Heartbeat<br>
       0x01 Start Service<br>
       0x02 Start Service ACK<br>
-      0x03 Start Service NACK<br>
+      0x03 Start Service NAK<br>
       0x04 End Service<br>
       0x05 End Service ACK<br>
-      0x06 End Service NACK<br>
+      0x06 End Service NAK<br>
       0x07 - 0xFD Reserved<br>
       0xFE Service Data ACK<br>
       0xFF Heartbeat ACK<br>
@@ -169,7 +185,7 @@ All transported data is formed with a header followed by an optional payload. Th
       <b>Frame Type = 0x00 (Control Frame)</b><br>
       0x0 - 0xFFFFFFFF reserved.<br>
       <b>Frame Type = 0x02 (First Frame)</b><br>
-      0x08 The data size for a first frame is always 8 bytes. In the payload, the first four bytes denote the Total Size of the data contained in all consecutive frames, and the second four bytes denotes the number of consecutive frames following this one<br>
+      0x08 The data size for a first frame is always 8 bytes. In the payload, the first four bytes denote the Total Size of the data contained in all consecutive frames, and the second four bytes denote the number of consecutive frames following this one<br>
       <b>Frame Type = 0x01 or 0x03 (Single or Consecutive Frame)</b><br>
       The total bytes in this frame's payload
     </td>
@@ -177,18 +193,203 @@ All transported data is formed with a header followed by an optional payload. Th
   <tr>
     <td>Message ID</td>
     <td>32 bit</td>
-    <td>The message identifier, used to uniquely identify this message</td>
+    <td>The message identifier, used to uniquely identify this message.<br> 
+    <b>Note:</b> Only included in protocol version 2 frame headers and higher</td>
   </tr>
 </table>
 
-## 3. Establishing Communication
+### 2.4 Max Transport Units
+The max transport unit (MTU) of a frame varies based on version. The MTU includes the frame header and payload. The current supported versions and their MTU's respectively are described below.
 
-### 3.1 Transport Layer
+| Version | MTU (bytes) |
+|------|-------------|
+|**1**| 1500|
+|**2**| 1500|
+|**3**| 131,084 |
+|**4 +**| 131,084|
+
+
+#### 2.4.1 Payload Size
+The payload size is determined by the MTU - Frame Header Size. 
+
+| Version | Max Payload Size (bytes) |
+|------|-------------|
+|**1**| 1488|
+|**2**| 1488|
+|**3**| 131,072 |
+|**4 +**| 131,072|
+
+#### 2.4.2 Encrypted MTU
+While the supported MTU is the maximum size for that version, if a frame is encrypted it will be subject to the MTU of that encryption protocol as well. That means the MTU will have to be the minimum between SDL's MTU  and the encryption protocol's MTU. 
+
+## 3. Frame Types
+### 3.1 Control Frame 
+Control frames are the lowest-level type of packets. They can be sent over any of the defined services. They are used for the control of the services in which they are sent.
+
+#### 3.1.1 Special Header Definitions:
+| Header Value |Expected values| Description |
+|--------------|---------------|-------------|
+|Frame Info| `0x00` - `0x06`, `0xFE`, `0xFF`|See below chart|
+|Data Size| `0x00`, `0x04`|`0x00` - Majority of control packets do not have payloads<br><br> `0x04` - HashID is included in the payload for a `StartServiceACK`
+
+
+#### 3.1.2 Frame Info Definitions:
+| Frame Info | Name | Description |
+|------------|------|-------------|
+| 0x00| Heartbeat| A ping packet that is sent to ensure the connection is still active and the service is still valid|
+| 0x01 | Start Service |Requests that a specific type of service is started |
+| 0x02 | Start Service ACK | Acknowledges that the specific service has been started successfully
+| 0x03 | Start Service NAK | Negatively acknowledges that the specific service was *not* started
+| 0x04 | End Service | Requests that a specific type of service is ended
+| 0x05 | End Service ACK | Acknowledges that the specific service has been ended successfully
+| 0x06 | End Service NAK |  Negatively acknowledges that the specific service was *not* ended or has not yet been started
+| 0xFE | Service Data ACK | *Deprecated*
+| 0xFF | Heartbeat ACK | Acknowledges that a Heartbeat control packet has been received
+
+### 3.2 Single Frame
+A frame of type Single Frame contains all the data for a particular packet in the payload. The majority of frames sent over the protocol utilize this frame type.
+<table width="100%">
+  <tr>
+  	<th colspan = "2" align="center">Single Frame</th>
+  </tr>
+  <tr>
+    <td width="10%">Header</td>
+    <td>Payload</td>
+  </tr>
+  <tr>
+    <td width="20%" style="visibility:hidden;"></td>
+    <td align="center">Data</td>
+  </tr>
+</table>
+
+#### 3.2.1 Special Header Definitions:
+
+| Header Value |Expected values| Description |
+|--------------|---------------|-------------|
+|Frame Info| `0x00`|Reserved|
+|Data Size| 0x01-0xFFFFFFFF|Total payload size in bytes for this frame|
+ 
+### 3.3 Multiple Frame Packets
+Some payloads will be larger than the maximum transport unit will allow. If that is the case, the payload will be broken up over multiple frames. These frame types are First and Consecutive. 
+
+<table width="100%">
+  <tr style="visibility:hidden;">
+    <td width="5%"></td>
+    <td width="5%"></td>
+    <td width="5%"></td>
+    <td ></td>
+    <td width="5%"></td>
+    <td></td>
+    <td width="5%"></td>
+    <td></td>
+    <td width="5%"></td>
+    <td></td>
+    <td></td>
+  </tr>
+    <tr>
+    <td style="visibility:hidden;" colspan="3"></td>
+    <td align="center" colspan="100%">Data</td>
+  </tr>
+  <tr>
+  <td style="visibility:hidden;" colspan ="3"></td>
+    <td align="center" colspan="2">Data Chunk 1 </td>
+    <td align="center" colspan="2">Data Chunk 2 </td>
+    <td style="border:0; background-color:white;" align="center" colspan="2">...</td>
+    <td align="center" colspan="2">Data Chunk n </td>
+  </tr>  
+  <tr>
+  	<th colspan = "2" align="center">First Frame</th>
+  </tr>
+  <tr>
+    <td> Header</td>
+    <td colspan = "1" >Payload</td>
+  </tr>
+  
+  <tr>
+     <th colspan = "2" style="visibility:hidden;"></th>
+     <th colspan = "3">Consecutive Frame 1</th>
+  </tr>
+  <tr>
+   <td colspan="2" style="visibility:hidden;"></td>
+	<td>Header</td>
+	<td colspan = "2" >Payload</td>  
+  </tr>
+  <tr>
+     <th colspan = "4" style="visibility:hidden;"></th>
+     <th colspan = "3">Consecutive Frame 2</th>
+  </tr>
+  <tr>
+   <td colspan="4" style="visibility:hidden;"></td>
+	<td>Header</td>
+	<td colspan = "2" >Payload</td>  
+  </tr>
+  
+  <tr style="border:0;">
+     <td colspan = "7" style="visibility:hidden; border:0;"></td>
+     <td style="font-size:25px; border:0; background-color:white;" align="center">...</td>
+  </tr>
+  <tr></tr>
+  <tr>
+     <th colspan = "8" style="visibility:hidden;"></th>
+     <th colspan = "3">Consecutive Frame n</th>
+  </tr>
+  <tr>
+   <td colspan="8" style="visibility:hidden;"></td>
+	<td>Header</td>
+	<td colspan = "2" >Payload</td>  
+  </tr>
+
+</table> 
+
+
+#### 3.3.1 First Frame
+The First Frame in a multiple frame payload contains information about the entire sequence of frames so that the receiving end can correctly parse all the frames and reassemble the entire payload. The payload of this frame is only eight bytes and contains information regarding the rest of the sequence.
+
+##### 3.3.1.1 Payload:
+<table width = "100%">
+	<tr align="center">
+		<th>Byte</th>
+		<td width = "10%">0</td>
+		<td width = "10%">1</td>
+		<td width = "10%">2</td>
+		<td width = "10%">3</td>
+		<td width = "10%">4</td>
+		<td width = "10%">5</td>
+		<td width = "10%">6</td>
+		<td width = "10%">7</td>
+	</tr>
+	<tr align="center">
+		<td style="visibility:hidden;"></td>
+		<td colspan ="4" >Total size of the original payload being parsed</td>
+		<td colspan ="4" >Number of Consecutive Frames</td>
+	</tr>
+</table>
+
+##### 3.3.1.2 Special Header Definitions:
+
+| Header Value |Expected values| Description |
+|--------------|---------------|-------------|
+|Frame Info| `0x00`|Reserved|
+|Data Size| `0x08`|This frame contains a fixed data size (8 bytes) for the payload.|
+
+#### 3.3.2 Consecutive Frame
+The Consecutive Frames in a multiple frame payload contain the actual raw data of the original payload. The parsed payload contained in each of the Consecutive Frames' payloads should be buffered until the entire sequence is complete. 
+
+##### 3.3.2.1 Special Header Definitions:
+
+| Header Value |Expected values| Description |
+|--------------|---------------|-------------|
+|Frame Info| `0x00` - `0xFF`|Values `0x01` - `0xFF` are used incrementally as each consecutive frame is created and sent in the sequence. eg The first consecutive packet in the sequence will have the value `0x01`, the next consecutive frame that contains the next chunk of data in the sequence will have the value `0x02`. <br><br>If the sequence reaches `0xFF` with more frames to create, it shall rollover to `0x01` **not** `0x00` as it is reserved. <br><br>`0x00` is used for the last consecutive frame only in a multi-frame sequence and the last frame must have this value.|
+|Data Size| `0x01` - `0xFFFFFFFF`|Payload size in bytes for this frame only|
+
+## 4. Establishing Communication
+
+### 4.1 Transport Layer
 >Required: All Protocol Versions
 
-A physical transport must be established between a head unit and an application.
+A physical transport must be established between a head unit and an application before an SDL session can start. 
 
-### 3.2 Version Negotiation
+### 4.2 Version Negotiation
 >Required: All Protocol Versions
 
 Once a transport is established, each application must negotiate the maximum supported protocol version with the head unit. To establish basic communication and register with the head unit, the application must start an RPC service (Service Type: 0x07), using a *Version 1 Protocol Header*.
@@ -196,13 +397,13 @@ Once a transport is established, each application must negotiate the maximum sup
 ##### Application -> Head Unit
 <table width="100%">
   <tr>
-    <td>Version</td>
-    <td>C</td>
-    <td>Frame Type</td>
-    <td>Service Type</td>
-    <td>Frame Info</td>
-    <td>Session Id</td>
-    <td>Data Size</td>
+    <th>Version</th>
+    <th>C</th>
+    <th>Frame Type</th>
+    <th>Service Type</th>
+    <th>Frame Info</th>
+    <th>Session Id</th>
+    <th>Data Size</th>
   </tr>
   <tr>
     <td></td>
@@ -224,21 +425,23 @@ Once a transport is established, each application must negotiate the maximum sup
   </tr>
 </table>
 
-#### 3.2.1 Success
+#### 4.2.1 Success
 
-If the head unit can start the RPC service it will respond with a Start Service ACK containing its maximum supported protocol version. If its maximum supported version is 1, the packet will contain an 8 byte header, otherwise it will contain a 12 byte header. From this point forward, the application is expected to use the minimum of the head unit's maximum supported version, and its maximum supported version. The payload of the Start Service ACK will contain a hash of the service which was started on the head unit if the payload size is greater than 0. This hash should be stored by an application and is needed in the end communication flow.
+If the head unit allows the RPC service to start, it will respond with a `StartServiceACK` containing its maximum supported protocol version. The packet structure will also match that of the supplied version; if the module's maximum supported version is 1, the packet will contain an 8 byte header (version 1), otherwise it will contain a 12 byte header (version 2). The application will then find the highest version supported by both the module and the application. This will be the determined version used for this session and will be used for all other packets sent from this point forward.
+
+The payload of the `StartServiceACK` will contain a hash of the service which was started on the head unit if the payload size is greater than 0. This hash should be stored by an application and is needed in the end communication flow.
 
 ##### Head Unit -> Application
 <table width="100%">
   <tr>
-    <td>Version</td>
-    <td>E</td>
-    <td>Frame Type</td>
-    <td>Service Type</td>
-    <td>Frame Info</td>
-    <td>Session Id</td>
-    <td>Data Size</td>
-    <td>Message ID</td>
+    <th>Version</th>
+    <th>E</th>
+    <th>Frame Type</th>
+    <th>Service Type</th>
+    <th>Frame Info</th>
+    <th>Session Id</th>
+    <th>Data Size</th>
+    <th>Message ID</th>
   </tr>
   <tr>
     <td></td>
@@ -262,27 +465,27 @@ If the head unit can start the RPC service it will respond with a Start Service 
   </tr>
 </table>
 
-#### 3.2.2 Failure
-If a session has already been started, or can't be started, a NACK will be sent in response to the Start Service packet.
+#### 4.2.2 Failure
+If a session has already been started, or can't be started, a `StartServiceNAK` will be sent in response to the `StartService` packet.
 
 ##### Head Unit -> Application
 <table width="100%">
   <tr>
-    <td>Version</td>
-    <td>E</td>
-    <td>Frame Type</td>
-    <td>Service Type</td>
-    <td>Frame Info</td>
-    <td>Session Id</td>
-    <td>Data Size</td>
-    <td>Message ID</td>
+    <th>Version</th>
+    <th>E</th>
+    <th>Frame Type</th>
+    <th>Service Type</th>
+    <th>Frame Info</th>
+    <th>Session Id</th>
+    <th>Data Size</th>
+    <th>Message ID</th>
   </tr>
   <tr>
     <td></td>
     <td>no</td>
     <td>Control</td>
     <td>RPC</td>
-    <td>Start Service NACK</td>
+    <td>Start Service NAK</td>
     <td></td>
     <td></td>
     <td></td>
@@ -299,31 +502,35 @@ If a session has already been started, or can't be started, a NACK will be sent 
   </tr>
 </table>
 
-### 3.3 Registration
+### 4.3 Registration
 >Required: All Protocol Versions
 
-Each application registers for continued communication with the head unit by sending a RegisterAppInterface Request RPC to the head unit via the RPC Service. Additional services can only be started after a successful RegisterAppInterface Response RPC has been sent from the head unit to the application.
+Each application registers for continued communication with the head unit by sending a `RegisterAppInterface` Request RPC to the head unit via the RPC Service. Additional services can only be started after a successful `RegisterAppInterface` Response RPC has been sent from the head unit to the application.
 
-### 3.4 Heartbeat
->Required: Protocol Versions 3 and higher
+### 4.4 Starting other services
+While the RPC service is the default service that is started to establish a connection and a session, the application may wish to start other services. Similar to the process in Section 3, all services that are to be to started in a session require a `StartService` packet to be sent from the application. If the module supports and allows that service type to be started, it will respond with a `StartServiceACK` that has a payload of the hash ID for that service. If the module is unable to start that service or that application does not have access to that service, it will respond with a `StartServiceNAK`. 
 
-After a successful start service exchange between the application and head unit both the application and head unit are required to be able to respond to heartbeat messages if the negotiated protocol version is 3 or higher. After sending a heartbeat, if the application or head unit does not respond within a timeout (custom per app/head unit), the sender will disconnect. The sender's timer for the heartbeat timeout should be reset every time any message is received. Heartbeats are sent using the Control Service Type (0x00)
+### 4.5 Heartbeat
+>**Deprecated: Protocol Versions 4 and higher** <br>
+>Required: Protocol Version 3
 
-#### 3.4.1 Heartbeat Request
+After a successful start service exchange between the application and head unit both the application and head unit are required to be able to respond to heartbeat messages if the negotiated protocol version is 3. After sending a heartbeat, if the application or head unit does not respond within a timeout (custom per app/head unit), the sender will disconnect. The sender's timer for the heartbeat timeout should be reset every time any message is received. Heartbeats are sent using the Control Service Type (0x00)
 
->Note the request can originate from either the Head Unit or the Application
+#### 4.5.1 Heartbeat Request
+
+>Note: The request can originate from either the Head Unit or the Application
 
 ##### Head Unit -> Application
 <table width="100%">
   <tr>
-    <td>Version</td>
-    <td>E</td>
-    <td>Frame Type</td>
-    <td>Service Type</td>
-    <td>Frame Info</td>
-    <td>Session Id</td>
-    <td>Data Size</td>
-    <td>Message ID</td>
+    <th>Version</th>
+    <th>E</th>
+    <th>Frame Type</th>
+    <th>Service Type</th>
+    <th>Frame Info</th>
+    <th>Session Id</th>
+    <th>Data Size</th>
+    <th>Message ID</th>
   </tr>
   <tr>
     <td></td>
@@ -347,21 +554,21 @@ After a successful start service exchange between the application and head unit 
   </tr>
 </table>
 
-#### 3.4.2 Heartbeat ACK
+#### 4.5.2 Heartbeat ACK
 
->Note the response ACK will originate from the Head Unit or the Application based on the origin of the request
+>Note: The response ACK will originate from the Head Unit or the Application based on the origin of the request
 
 ##### Application -> Head Unit
 <table width="100%">
   <tr>
-    <td>Version</td>
-    <td>E</td>
-    <td>Frame Type</td>
-    <td>Service Type</td>
-    <td>Frame Info</td>
-    <td>Session Id</td>
-    <td>Data Size</td>
-    <td>Message ID</td>
+    <th>Version</th>
+    <th>E</th>
+    <th>Frame Type</th>
+    <th>Service Type</th>
+    <th>Frame Info</th>
+    <th>Session Id</th>
+    <th>Data Size</th>
+    <th>Message ID</th>
   </tr>
   <tr>
     <td></td>
@@ -385,16 +592,23 @@ After a successful start service exchange between the application and head unit 
   </tr>
 </table>
 
-#### 3.4.3 Heartbeat NACK
-There is no heartbeat NACK.
+#### 4.5.3 Heartbeat NAK
+There is currently no heartbeat NAK.
 
-## 4. Services
+## 5. Services
+Every active session has the ability to start any of the services defined in this protocol spec as long as they have permission on the module in which they are connected. Every session can only have one of each type of service open at a time. 
+ 
 Messages sent have a priority based on their Service Type. Lower values for service type have higher delivery priority. A message's payload's format is based on the different service types defined below.
 
-### 4.1 RPC Service
+### 5.1 Control Service
 >Required: All Protocol Versions
 
-The RPC service is used to send requests, responses, and notifications between an application and a head unit. Valid messages are defined in the [RPC Specification](https://github.com/smartdevicelink/sdl_core/blob/develop/src/components/interfaces/MOBILE_API.xml).
+The control service is the lowest level service available. While Control Frame packets are used frequently, the control service itself is rarely used.   
+
+### 5.2 RPC Service
+>Required: All Protocol Versions
+
+The RPC service is used to send requests, responses, and notifications between an application and a head unit. Valid messages are defined in the [RPC Specification](https://github.com/smartdevicelink/sdl_core/blob/master/src/components/interfaces/MOBILE_API.xml).
 
 The payload of a message sent via the RPC service, which directly follows the Frame Header in the packet, consists of a Binary Header, and JSON data representing the RPC.
 
@@ -409,8 +623,8 @@ The payload of a message sent via the RPC service, which directly follows the Fr
   </tr>
 </table>
 
-#### 4.1.2 Binary Header
->Available: Protocol Version 2 and greater
+#### 5.2.2 Binary Header
+>Required: Protocol Version 2 and greater
 
 <table>
   <tr>
@@ -431,7 +645,7 @@ The payload of a message sent via the RPC service, which directly follows the Fr
   </tr>
 </table>
 
-##### 4.1.2.1 Binary Header Fields
+##### 5.2.2.1 Binary Header Fields
 <table>
   <tr>
     <th>Field</th>
@@ -465,10 +679,10 @@ The payload of a message sent via the RPC service, which directly follows the Fr
   </tr>
 </table>
 
-### 4.2 Hybrid (Bulk Data) Service
+### 5.3 Hybrid (Bulk Data) Service
 >Required: Protocol Version 2 and greater
 
-The Hybrid Service does not need to be explicitly started, all applications that have successfully registered have access to the Hybrid Service.
+The Hybrid Service does not need to be explicitly started; all applications that have successfully registered have access to the Hybrid Service.
 
 The Hybrid Service is similar to the RPC Service but adds a bulk data field. The payload of a message sent via the Hybrid service consists of a Binary Header, JSON Data, and Bulk Data.
 
@@ -490,15 +704,21 @@ The Binary Header of a message using the Hybrid Service is the same as the Binar
   </tr>
 </table>
 
-### 4.3 Audio Service (PCM)
+### 5.4 Audio Service (PCM)
 >Available: Protocol Version 3 and greater
 
-The application can start the audio service to send PCM audio data to the head unit. The payload for the Audio Service is only PCM audio data.
+The application can start the audio service to send PCM audio data to the head unit. After the `StartService` packet is sent and the ACK received, the payload for the Audio Service is only PCM audio data.
 
-### 4.4 Video Service (H.264)
+### 5.5 Video Service (H.264)
 >Available: Protocol Version 3 and greater
 
-The application can start the video service to send H.264 video data to the head unit. The payload for the Video Service is only H.264 video data.
+The application can start the video service to send H.264 video data to the head unit. After the `StartService` packet is sent and the ACK received, the payload for the Video Service is only H.264 video data.
 
-## 5 Ending Communication
-To close out a communication session with the head unit, an application sends
+
+## 6. Ending Communication
+The application may request it's session to be ended outside of a transport disconnect, module power cycle, etc. 
+### 6.1 Completely Closing  a Session and Ending All Services
+To close out a communication session with the head unit, an application sends an `EndService` packet with service type 7 (RPC) to the module. The `EndService` packet payload should include the correct hash ID supplied with the `StartServiceACK`. 
+
+### 6.2 Closing Specific Services
+If the application doesn't want to completely stop its session, but only wishes to close a specific session it can do so using an `EndService` packet that's service type matches the service that the application is trying to close. The `EndService` packet should include the hash ID in its payload that was contained in the `StartServiceACK` for  that specific service.
