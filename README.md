@@ -1,6 +1,6 @@
 # SmartDeviceLink Protocol
 
-**Current Version: 4.0.0**
+**Current Version: 5.0.0**
 
 ## 1. Overview
 The SmartDeviceLink protocol specification describes the method for establishing communication between an application and head unit and registering the application for continued communication with the head unit. The protocol is used as the base formation of packets sent from one module to another. 
@@ -28,7 +28,7 @@ All transported data is formed with a header followed by an optional payload. Th
     <th width="25%">Byte 3</th>
     <th width="25%">Byte 4</th>
   </tr>
-  <tr>
+  <tr align="center">
     <td width="12.5%">Version</td>
     <td width="3.125%">C</td>
     <td width="9.375%">Frame Type</td>
@@ -60,7 +60,7 @@ All transported data is formed with a header followed by an optional payload. Th
     <th width="25%">Byte 3</th>
     <th width="25%">Byte 4</th>
   </tr>
-  <tr>
+  <tr align="center">
     <td width="12.5%">Version</td>
     <td width="3.125%">E</td>
     <td width="9.375%">Frame Type</td>
@@ -142,7 +142,7 @@ All transported data is formed with a header followed by an optional payload. Th
       0x01 - 0x06 Reserved<br>
       0x07 Remote Procedure Call (RPC) Service<br>
       0x08 - 0x09 Reserved<br>
-      0x0A PCM Service<br>
+      0x0A Audio Service<br>
       0x0B Video Service<br>
       0x0C - 0x0E Reserved<br>
       0x0F Bulk Data (Hybrid Service)<br>
@@ -207,6 +207,7 @@ The max transport unit (MTU) of a frame varies based on version. The MTU include
 |**2**| 1500|
 |**3**| 131,084 |
 |**4**| 131,084|
+|**5**| 131,084 default or negotiated *(See Control Frame Payloads)*
 
 
 #### 2.4.1 Payload Size
@@ -218,6 +219,7 @@ The payload size is determined by the MTU - Frame Header Size.
 |**2**| 1488|
 |**3**| 131,072 |
 |**4**| 131,072|
+|**5**| 131,072 default or (Negotiated MTU - 12 bytes) *(See Control Frame Payloads)*
 
 #### 2.4.2 Encrypted MTU
 While the supported MTU is the maximum size for that version, if a frame is encrypted it will be subject to the MTU of that encryption protocol as well. That means the MTU will have to be the minimum between SDL's MTU  and the encryption protocol's MTU. 
@@ -245,6 +247,119 @@ Control frames are the lowest-level type of packets. They can be sent over any o
 | 0x06 | End Service NAK |  Negatively acknowledges that the specific service was *not* ended or has not yet been started
 | 0xFE | Service Data ACK | *Deprecated*
 | 0xFF | Heartbeat ACK | Acknowledges that a Heartbeat control packet has been received
+
+#### 3.1.3 Payloads
+>Added: Protocol Version 5<br>
+>*Note: All paramaters are optional*<br>
+
+Control frames use [BSON](http://bsonspec.org) to store payload data. All payload types are directly from the BSON spec. Each control frame info type will have a defined set of available data. Most types will also have differently available data based on their service type.
+
+If there is no data to send for a given parameter, the parameter should not be included. 
+
+**Note:** Heartbeat, Heartbeat ACK, and Service Data ACK control frame types are not covered for any service as they were deprecated before payloads were introduced.
+
+##### 3.1.3.1 Control Service
+No defined payloads at this time.
+
+##### 3.1.3.2 RPC Service
+
+###### 3.1.3.2.1 Start Service
+**Note:** While this includes a payload, it will remain a v1 frame header to ensure backwards compatibility with older systems.
+
+| Tag Name| Type | Description |
+|------------|------|-------------|
+|protocolVersion|string| The max version of the protocol supported by client requesting service to start. Must be in the format *"Major.Minor.Patch"*|
+
+###### 3.1.3.2.2 Start Service ACK
+| Tag Name| Type | Description |
+|------------|------|-------------|
+|protocolVersion|string|The negotiated version of the protocol. Must be in the format *"Major.Minor.Patch"*. The frame header version should match the major version exactly.|
+|hashId|int32| Hash ID to identify this service and used when sending an `EndService` control frame|
+|mtu| int64 | Max transport unit to be used for this service|. If not included the client should use the protocol version default.|
+
+
+###### 3.1.3.2.3 Start Service NAK
+| Tag Name| Type | Description |
+|------------|------|-------------|
+| rejectedParams |String Array| An array of rejected parameters|
+
+###### 3.1.3.2.4 End Service
+| Tag Name| Type | Description |
+|------------|------|-------------|
+|hashId|int32| Hash ID supplied in the `StartServiceACK` for this service type|
+###### 3.1.3.2.5 End Service ACK
+
+###### 3.1.3.2.6 End Service NAK
+| Tag Name| Type | Description |
+|------------|------|-------------|
+| rejectedParams |String Array| An array of rejected parameters such as: [`hashId`]
+
+
+##### 3.1.3.3 Audio Service
+###### 3.1.3.3.1 Start Service
+
+###### 3.1.3.3.2 Start Service ACK
+| Tag Name| Type | Description |
+|------------|------|-------------|
+|hashId|int32| Hash ID to identify this service and used when sending an `EndService` control frame|
+|mtu| int64 | Max transport unit to be used for this service. If not included the client should use the one set via the RPC service or protocol version default.|
+
+###### 3.1.3.3.3 Start Service NAK
+| Tag Name| Type | Description |
+|------------|------|-------------|
+| rejectedParams |String Array| An array of rejected parameters such as: [`videoProtocol`, `videoProtocol`]
+
+###### 3.1.3.3.4 End Service
+| Tag Name| Type | Description |
+|------------|------|-------------|
+|hashId|int32| Hash ID supplied in the `StartServiceACK` for this service type|
+###### 3.1.3.3.5 End Service ACK
+
+###### 3.1.3.3.6 End Service NAK
+| Tag Name| Type | Description |
+|------------|------|-------------|
+| rejectedParams |String Array| An array of rejected parameters such as: [`hashId `]
+
+
+##### 3.1.3.4 Video Service
+###### 3.1.3.4.1 Start Service
+| Tag Name| Type | Description |
+|------------|------|-------------|
+|height|int32| Desired height from the client requesting the video service to start|
+|width|int32| Desired width from the client requesting the video service to start|
+|videoProtocol|String| Desired video protocol to be used. See `VideoStreamingProtocol ` RPC|
+|videoCodec|String|  Desired video codec to be used. See `VideoStreamingCodec` RPC|
+
+###### 3.1.3.4.2 Start Service ACK
+| Tag Name| Type | Description |
+|------------|------|-------------|
+|hashId|int32| Hash ID to identify this service and used when sending an `EndService` control frame|
+|mtu| int64 | Max transport unit to be used for this service. If not included the client should use the one set via the RPC service or protocol version default.|
+|height|int32| Accepted height from the client requesting the video service to start|
+|width|int32| Accepted width from the client requesting the video service to start|
+|videoProtocol|String| Accepted video protocol to be used. See `VideoStreamingProtocol ` RPC|
+|videoCodec|String|  Accepted video codec to be used. See `VideoStreamingCodec` RPC|
+
+
+###### 3.1.3.4.3 Start Service NAK
+| Tag Name| Type | Description |
+|------------|------|-------------|
+| rejectedParams |String Array| An array of rejected parameters such as: [`videoProtocol`, `videoProtocol`]
+
+###### 3.1.3.4.4 End Service
+| Tag Name| Type | Description |
+|------------|------|-------------|
+|hashId|int32| Hash ID supplied in the `StartServiceACK` for this service type|
+
+###### 3.1.3.4.5 End Service ACK
+
+###### 3.1.3.4.6 End Service NAK
+| Tag Name| Type | Description |
+|------------|------|-------------|
+| rejectedParams |String Array| An array of rejected parameters such as: [`hashId`]
+
+
+
 
 ### 3.2 Single Frame
 A frame of type Single Frame contains all the data for a particular packet in the payload. The majority of frames sent over the protocol utilize this frame type.
