@@ -507,9 +507,36 @@ A physical transport must be established between a head unit and an application 
 ### 4.2 Version Negotiation
 >Required: All Protocol Versions
 
-Once a transport is established, each application must negotiate the maximum supported protocol version with the head unit. To establish basic communication and register with the head unit, the application must start an RPC service (Service Type: 0x07), using a *Version 1 Protocol Header*.
+#### 4.2.1 Overview
+Once a physical transport is established, each application must negotiate the maximum supported protocol version with the head unit. To establish basic communication and register with the head unit, the application must start an RPC service (Service Type: 0x07), using a *Version 1 Protocol Header*.
+
+There are two types of version negotiation. Protocol versions 1 through 4 use an old style of negotiation, where as versions 5 and newer use a faster and more intelligent negotiation scheme.
+
+##### 4.2.1.1 Version 1-4 Negotiation
+>Required for Protocol Versions 1 through 4
+
+| Proxy| Direction | Core |
+|------------|------|-------------|
+|`StartService`<br> **Version:** v1 <br> **Payload:** no payload| ----------->|
+|| <-----------|`StartServiceACK`<br> **Version:** Max supported by Core<br> **Payload:** raw bytes for hashID
+|`SingleFrame` *(or other RPC supporting Frame Type)* <br> **Version:** Highest version supported by both Core and Proxy <br> **Payload:** Lots of bytes| ----------->| Sets negotiated version. 
+
+##### 4.2.1.2 Version 5+ Negotiation
+>Required for Protocol Versions 5 and newer
+
+| Proxy| Direction | Core |
+|------------|------|-------------|
+|`StartService`<br> **Version:** v1 <br> **Payload:** Constructed payload [protocolVersion: 5.x.x]| ----------->| **v4 Core**: Ignores payload, sends protocol version 4 frame and uses previous negotiation scheme. <br> **v5+ Core:** Reads in payload data, uses this information to determine version. 
+|| <-----------|`StartServiceACK`<br> **Version:** Highest version supported by both Core and Proxy<br> **Payload:** Constructed payload [protocolVersion: 5.x.x, hashId: 0x9873, mtu: 130687]
+|`SingleFrame`<br> **Version:** Highest version supported by both Core and Proxy <br> **Payload:** Lots of bytes| ----------->|
+
+#### 4.2.2 Starting Communication
+The application sends a `StartService` frame to the module containing no payload.
 
 ##### Application -> Head Unit
+
+#### 4.2.2.1 Versions 1 - 4
+
 <table width="100%">
   <tr>
     <th>Version</th>
@@ -540,13 +567,61 @@ Once a transport is established, each application must negotiate the maximum sup
   </tr>
 </table>
 
-#### 4.2.1 Success
+#### 4.2.2.2 Versions 5 and newer
+>**Note:** Even though this is a Protocol Version 1 frame header it includes a payload. This is a very special exception.
 
-If the head unit allows the RPC service to start, it will respond with a `StartServiceACK` containing its maximum supported protocol version. The packet structure will also match that of the supplied version; if the module's maximum supported version is 1, the packet will contain an 8 byte header (version 1), otherwise it will contain a 12 byte header (version 2). The application will then find the highest version supported by both the module and the application. This will be the determined version used for this session and will be used for all other packets sent from this point forward.
+Payload includes a constructed BSON object that has a single parameter of `protocolVersion` that describes the applications max supported Protocol Version.
+
+<table width="100%">
+  <tr>
+    <th>Version</th>
+    <th>C</th>
+    <th>Frame Type</th>
+    <th>Service Type</th>
+    <th>Frame Info</th>
+    <th>Session Id</th>
+    <th>Data Size</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>no</td>
+    <td>Control</td>
+    <td>RPC</td>
+    <td>Start Service</td>
+    <td>0</td>
+    <td>Size of Payload</td>
+  </tr>
+  <tr>
+    <td>0b0001</td>
+    <td>0b0</td>
+    <td>0b000</td>
+    <td>0x07</td>
+    <td>0x01</td>
+    <td>0x00</td>
+    <td>0xNNNNNNNN</td>
+  </tr>
+  </table>
+  <table width=100% >
+  <tr>
+  	<th colspan="8">Payload</th>
+  </tr>
+  <tr align="center">
+  	<td colspan="8" > [protocolVersion: x.x.x]</td
+  </tr>
+</table>
+
+#### 4.2.3 Success
+If the head unit allows the RPC service to start, it will respond with a `StartServiceACK`. At this time the version will finish its negotiation process.
+
+##### Head Unit -> Application
+
+##### 4.2.3.1 Protocol Versions 1-4 
+
+The `StartServiceACK` will contain the module's maximum supported protocol version. The packet structure will also match that of the supplied version; if the module's maximum supported version is 1, the packet will contain an 8 byte header (version 1), otherwise it will contain a 12 byte header (version 2). The application will then find the highest version supported by both the module and the application. This will be the determined version used for this session and will be used for all other packets sent from this point forward as well as all other services.
 
 The payload of the `StartServiceACK` will contain a hash of the service which was started on the head unit if the payload size is greater than 0. This hash should be stored by an application and is needed in the end communication flow.
 
-##### Head Unit -> Application
+
 <table width="100%">
   <tr>
     <th>Version</th>
@@ -580,10 +655,101 @@ The payload of the `StartServiceACK` will contain a hash of the service which wa
   </tr>
 </table>
 
-#### 4.2.2 Failure
+##### 4.2.3.2 Protocol Versions 5 and newer 
+
+The `StartServiceACK` will contain a negotiated version between what the application provided in the `StartService` frame and what the module's maximum supported protocol version. Thus, if it is determined that no such information was sent in the `StartService` frame, the module will assume the previous method of version negotiation and send version 4 to assume it's max version supplied to the application and wait for the incoming `RegisterAppInterface` RPC from the application to finally determine the negotiated version. Either way, the determined version will be used for this session including all other packets sent from this point forward as well as all other services.
+
+The packet structure will also match that of the supplied version; if the module's maximum supported version is 1, the packet will contain an 8 byte header (version 1), otherwise it will contain a 12 byte header (version 2). If the protocol version was determined to be 5 or higher, the payload it contains will be constructed in nature as a BSON object. The application will then find the highest version supported by both the module and the application. This will be the determined version used for this session and will be used for all other packets sent from this point forward as well as all other services.
+
+The payload of the `StartServiceACK` will contain the agreed upon full protocol version *"Major.Minor.Patch"*, a hash of the service which was started on the head unit, and the max transport unit for that session (0x07 RPC). The hash should be stored by an application and is needed in the end communication flow. The MTU should be used as the default MTU for all other services for that session unless otherwise provided in the corresponding `StartServiceACK` for that service. 
+
+###### 4.2.3.2.1 Protocol Version Supplied in `StartService`
+
+<table width="100%">
+  <tr>
+    <th>Version</th>
+    <th>E</th>
+    <th>Frame Type</th>
+    <th>Service Type</th>
+    <th>Frame Info</th>
+    <th>Session Id</th>
+    <th>Data Size</th>
+    <th>Message ID</th>
+  </tr>
+  <tr>
+    <td>Max major version supported by module and application </td>
+    <td>no</td>
+    <td>Control</td>
+    <td>RPC</td>
+    <td>Start Service ACK</td>
+    <td>Assigned Session</td>
+    <td>Size of payload</td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td>0bNNNN</td>
+    <td>0b0</td>
+    <td>0b000</td>
+    <td>0x07</td>
+    <td>0x02</td>
+    <td>0x01</td>
+    <td>0xNNNNNNNN</td>
+    <td>0x0000000n</td>
+  </tr>
+</table>
+</table>
+<table width=100% >
+	<tr>
+  		<th colspan="8">Payload</th>
+  	</tr>
+  	<tr align="center">
+  		<td colspan="8" > [protocolVersion: x.x.x, hashId: 0xNNNN, mtu: 130687]</td
+  	</tr>
+</table>
+
+###### 4.2.3.2.2 Protocol Version Not Supplied  in `StartService`
+
+<table width="100%">
+  <tr>
+    <th>Version</th>
+    <th>E</th>
+    <th>Frame Type</th>
+    <th>Service Type</th>
+    <th>Frame Info</th>
+    <th>Session Id</th>
+    <th>Data Size</th>
+    <th>Message ID</th>
+  </tr>
+  <tr>
+    <td>Max version application can possibly support (4)</td>
+    <td>no</td>
+    <td>Control</td>
+    <td>RPC</td>
+    <td>Start Service ACK</td>
+    <td>Assigned Session</td>
+    <td>4</td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td>0b0100</td>
+    <td>0b0</td>
+    <td>0b000</td>
+    <td>0x07</td>
+    <td>0x02</td>
+    <td>0x01</td>
+    <td>0x00000004</td>
+    <td>0x0000000n</td>
+  </tr>
+</table>
+
+
+##### 4.2.4 Failure
 If a session has already been started, or can't be started, a `StartServiceNAK` will be sent in response to the `StartService` packet.
 
 ##### Head Unit -> Application
+
+##### 4.2.4.1 Protocol Versions 1 through 4
+
 <table width="100%">
   <tr>
     <th>Version</th>
@@ -615,6 +781,49 @@ If a session has already been started, or can't be started, a `StartServiceNAK` 
     <td>0x00000000</td>
     <td>0x00000000</td>
   </tr>
+</table>
+
+##### 4.2.4.1 Protocol Versions 5 and Newer
+
+<table width="100%">
+  <tr>
+    <th>Version</th>
+    <th>E</th>
+    <th>Frame Type</th>
+    <th>Service Type</th>
+    <th>Frame Info</th>
+    <th>Session Id</th>
+    <th>Data Size</th>
+    <th>Message ID</th>
+  </tr>
+  <tr>
+    <td>Max Module Version (4)</td>
+    <td>no</td>
+    <td>Control</td>
+    <td>RPC</td>
+    <td>Start Service NAK</td>
+    <td>0</td>
+    <td>Size of Payload</td>
+    <td>0</td>
+  </tr>
+  <tr>
+    <td>0b0100</td>
+    <td>0b0</td>
+    <td>0b000</td>
+    <td>0x07</td>
+    <td>0x03</td>
+    <td>0x00</td>
+    <td>0xNNNNNNNN</td>
+    <td>0x00000000</td>
+  </tr>
+</table>
+<table width=100% >
+	<tr>
+  		<th colspan="8">Payload</th>
+  	</tr>
+  	<tr align="center">
+  		<td colspan="8" > [rejectedParams:[protocolVersion, x, x]]</td
+  	</tr>
 </table>
 
 ### 4.3 Registration
