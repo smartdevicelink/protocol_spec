@@ -274,7 +274,7 @@ No defined payloads at this time.
 | Tag Name| Type | Description |
 |------------|------|-------------|
 |protocolVersion|string|The negotiated version of the protocol. Must be in the format *"Major.Minor.Patch"*. The frame header version should match the major version exactly.|
-|hashId|int32| Hash ID to identify this service and used when sending an `EndService` control frame|
+|hashId|int32| Hash ID to identify this session and used when sending an `EndService` control frame for the RPC service type|
 |mtu| int64 | Max transport unit to be used for this service|. If not included the client should use the protocol version default.|
 
 
@@ -297,11 +297,11 @@ No defined payloads at this time.
 
 ##### 3.1.3.3 Audio Service
 ###### 3.1.3.3.1 Start Service
+>No parameters
 
 ###### 3.1.3.3.2 Start Service ACK
 | Tag Name| Type | Description |
 |------------|------|-------------|
-|hashId|int32| Hash ID to identify this service and used when sending an `EndService` control frame|
 |mtu| int64 | Max transport unit to be used for this service. If not included the client should use the one set via the RPC service or protocol version default.|
 
 ###### 3.1.3.3.3 Start Service NAK
@@ -310,18 +310,18 @@ No defined payloads at this time.
 | rejectedParams |String Array| An array of rejected parameters such as: [`videoProtocol`, `videoProtocol`]
 
 ###### 3.1.3.3.4 End Service
-| Tag Name| Type | Description |
-|------------|------|-------------|
-|hashId|int32| Hash ID supplied in the `StartServiceACK` for this service type|
+>No parameters
+
 ###### 3.1.3.3.5 End Service ACK
+>No parameters
 
 ###### 3.1.3.3.6 End Service NAK
 | Tag Name| Type | Description |
 |------------|------|-------------|
 | rejectedParams |String Array| An array of rejected parameters such as: [`hashId `]
 
-
 ##### 3.1.3.4 Video Service
+
 ###### 3.1.3.4.1 Start Service
 | Tag Name| Type | Description |
 |------------|------|-------------|
@@ -333,7 +333,6 @@ No defined payloads at this time.
 ###### 3.1.3.4.2 Start Service ACK
 | Tag Name| Type | Description |
 |------------|------|-------------|
-|hashId|int32| Hash ID to identify this service and used when sending an `EndService` control frame|
 |mtu| int64 | Max transport unit to be used for this service. If not included the client should use the one set via the RPC service or protocol version default.|
 |height|int32| Accepted height from the client requesting the video service to start|
 |width|int32| Accepted width from the client requesting the video service to start|
@@ -347,11 +346,10 @@ No defined payloads at this time.
 | rejectedParams |String Array| An array of rejected parameters such as: [`videoProtocol`, `videoProtocol`]
 
 ###### 3.1.3.4.4 End Service
-| Tag Name| Type | Description |
-|------------|------|-------------|
-|hashId|int32| Hash ID supplied in the `StartServiceACK` for this service type|
+>No parameters
 
 ###### 3.1.3.4.5 End Service ACK
+>No parameters
 
 ###### 3.1.3.4.6 End Service NAK
 | Tag Name| Type | Description |
