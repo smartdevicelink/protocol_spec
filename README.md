@@ -1,6 +1,6 @@
 # SmartDeviceLink Protocol
 
-**Current Version: 5.0.0**
+**Current Version: 5.1.0**
 
 ## 1. Overview
 The SmartDeviceLink protocol specification describes the method for establishing communication between an application and head unit and registering the application for continued communication with the head unit. The protocol is used as the base formation of packets sent from one module to another. 
@@ -161,7 +161,11 @@ All transported data is formed with a header followed by an optional payload. Th
       0x04 End Service<br>
       0x05 End Service ACK<br>
       0x06 End Service NAK<br>
-      0x07 - 0xFD Reserved<br>
+      0x07 Register Secondary Transport<br>
+      0x08 Register Secondary Transport ACK<br>
+      0x09 Register Secondary Transport NAK<br>
+      0x0A - 0xFC Reserved<br>
+      0xFD Transport Event Update<br>
       0xFE Service Data ACK<br>
       0xFF Heartbeat ACK<br>
       <b>Frame Type = 0x01 (Single Frame)</b><br>
@@ -176,7 +180,10 @@ All transported data is formed with a header followed by an optional payload. Th
   <tr>
     <td>Session ID</td>
     <td>8 bit</td>
-    <td>The session identifier</td>
+    <td>
+      The session identifier<br>
+      <b>Note: </b>When sending a "Register Secondary Transport" message, the session ID sent in the initial "Start Service ACK" RPC Service message is used
+    </td>
   </tr>
   <tr>
     <td>Data Size</td>
@@ -231,7 +238,7 @@ Control frames are the lowest-level type of packets. They can be sent over any o
 #### 3.1.1 Special Header Definitions:
 | Header Value |Expected values| Description |
 |--------------|---------------|-------------|
-|Frame Info| `0x00` - `0x06`, `0xFE`, `0xFF`|See below "Frame Info Definitions"|
+|Frame Info| `0x00` - `0x09`, `0xFD` - `0xFF`|See below "Frame Info Definitions"|
 |Data Size| `0x00`, `0x04`|`0x00` - Majority of control packets do not have payloads<br><br> `0x04` - Used for `StartServiceACK` where the payload is a HashID |
 
 
@@ -245,6 +252,10 @@ Control frames are the lowest-level type of packets. They can be sent over any o
 | 0x04 | End Service | Requests that a specific type of service is ended
 | 0x05 | End Service ACK | Acknowledges that the specific service has been ended successfully
 | 0x06 | End Service NAK |  Negatively acknowledges that the specific service was *not* ended or has not yet been started
+| 0x07 | Register Secondary Transport | This frame is sent from Proxy to Core to notify that Secondary Transport has been established.<br>This frame should be only sent on Secondary Transport. |
+| 0x08 | Register Secondary Transport ACK | This frame is sent from Core to Proxy to notify that Core has recognized Secondary Transport for the app.<br>This frame should be sent only on Secondary Transport. Proxy is allowed to send any frames on Secondary Transport only after receiving this frame. |
+| 0x09 | Register Secondary Transport NAK | This frame is sent from Core to Proxy to notify that Core could not recognize Secondary Transport for the app.<br>This frame should be sent only on Secondary Transport. |
+| 0xFD | Transport Event Update | This frame is sent from Core to Proxy to indicate that status or configuration of transport(s) is/are updated.<br>This frame should not be sent prior to Version Negotiation. |
 | 0xFE | Service Data ACK | *Deprecated*
 | 0xFF | Heartbeat ACK | Acknowledges that a Heartbeat control packet has been received
 
@@ -259,40 +270,69 @@ If there is no data to send for a given parameter, the parameter should not be i
 **Note:** Heartbeat, Heartbeat ACK, and Service Data ACK control frame types are not covered for any service as they were deprecated before payloads were introduced.
 
 ##### 3.1.3.1 Control Service
-No defined payloads at this time.
+
+###### 3.1.3.1.1 Register Secondary Transport
+
+###### 3.1.3.1.2 Register Secondary Transport ACK
+
+###### 3.1.3.1.3 Register Secondary Transport NAK
+| Tag Name | Added | Type | Description |
+|----------|-------|------|-------------|
+| reason | 5.1.0 | string | (Optional) Specify a string describing the reason of failure |
+
+###### 3.1.3.1.4 Transport Event Update
+| Tag Name | Added | Type | Description |
+|----------|-------|------|-------------|
+| tcpIpAddress | 5.1.0 | string | (Optional) Specify a string representation of IP address that SDL Core is listening on.<br>It can be IPv4 address (example: "192.168.1.1") or IPv6 address (example: "fd12:3456:789a::1").<br>An empty string indicates that the TCP transport becomes unavailable. |
+| tcpPort | 5.1.0 | int32 | (Optional) Specify the TCP Port number that SDL Core is listening on. This value should be same as `TCPAdapterPort` in smartDeviceLink.ini file. |
 
 ##### 3.1.3.2 RPC Service
 
 ###### 3.1.3.2.1 Start Service
 **Note:** While this includes a payload, it will remain a v1 frame header to ensure backwards compatibility with older systems.
 
-| Tag Name| Type | Description |
-|------------|------|-------------|
-|protocolVersion|string| The max version of the protocol supported by client requesting service to start. Must be in the format *"Major.Minor.Patch"*|
+| Tag Name | Added | Type | Description |
+|----------|-------|------|-------------|
+| protocolVersion | 5.0.0 | string | The max version of the protocol supported by client requesting service to start. Must be in the format *"Major.Minor.Patch"* |
 
 ###### 3.1.3.2.2 Start Service ACK
-| Tag Name| Type | Description |
-|------------|------|-------------|
-|protocolVersion|string|The negotiated version of the protocol. Must be in the format *"Major.Minor.Patch"*. The frame header version should match the major version exactly.|
-|hashId|int32| Hash ID to identify this session and used when sending an `EndService` control frame for the RPC service type|
-|mtu| int64 | Max transport unit to be used for this service|. If not included the client should use the protocol version default.|
+| Tag Name | Added | Type | Description |
+|----------|-------|------|-------------|
+| protocolVersion | 5.0.0 | string | The negotiated version of the protocol. Must be in the format *"Major.Minor.Patch"*. The frame header version should match the major version exactly. |
+| hashId | 5.0.0 | int32 | Hash ID to identify this session and used when sending an `EndService` control frame for the RPC service type |
+| mtu | 5.0.0 | int64 | Max transport unit to be used for this service. If not included the client should use the protocol version default. |
+| secondaryTransports | 5.1.0 | string array | (Optional) Transport types which Core allows to use for Secondary Transport. Refer to Table 1 for possible values.<br>As of now, this array should contain at most one element (including more than one secondary transport at this time will result in undefined behavior).<br>If Core does not allow setting up the Secondary Transport, it can make the array empty, or completely omit this parameter. |
+| audioServiceTransports | 5.1.0 | int32 array | (Optional) List of transports that are allowed to carry audio service. The value of int32 can be either 1 (meaning "Primary Transport") or 2 (meaning "Secondary Transport"), and the transports are listed in preferred order. Proxy must not start the service on a transport that is not listed in the array.<br>If this parameter is omitted, then the Proxy should start audio service on Primary Transport. |
+| videoServiceTransports | 5.1.0 | int32 array | (Optional) List of transports that are allowed to carry video service.<br>See `audioServiceTransports` description for more details.<br>If this parameter is omitted, then the Proxy should start video service on Primary Transport. |
 
+**Table 1: list of transport type strings**
+
+String                 | Description
+-----------------------|------------
+IAP\_BLUETOOTH         | iAP over Bluetooth
+IAP\_USB               | iAP over USB, and Core cannot distinguish between Host Mode and Device Mode.
+IAP\_USB\_HOST\_MODE   | iAP over USB, and the phone is running as host
+IAP\_USB\_DEVICE\_MODE | iAP over USB, and the phone is running as device
+IAP\_CARPLAY           | iAP over Carplay wireless
+SPP\_BLUETOOTH         | Bluetooth SPP. Either legacy SPP or SPP multiplexing.
+AOA\_USB               | Android Open Accessory
+TCP\_WIFI              | TCP connection over Wi-Fi
 
 ###### 3.1.3.2.3 Start Service NAK
-| Tag Name| Type | Description |
-|------------|------|-------------|
-| rejectedParams |String Array| An array of rejected parameters|
+| Tag Name | Added | Type | Description |
+|----------|-------|------|-------------|
+| rejectedParams | 5.0.0 | string array | An array of rejected parameters|
 
 ###### 3.1.3.2.4 End Service
-| Tag Name| Type | Description |
-|------------|------|-------------|
-|hashId|int32| Hash ID supplied in the `StartServiceACK` for this service type|
+| Tag Name | Added | Type | Description |
+|----------|-------|------|-------------|
+| hashId | 5.0.0 | int32 | Hash ID supplied in the `StartServiceACK` for this service type |
 ###### 3.1.3.2.5 End Service ACK
 
 ###### 3.1.3.2.6 End Service NAK
-| Tag Name| Type | Description |
-|------------|------|-------------|
-| rejectedParams |String Array| An array of rejected parameters such as: [`hashId`]
+| Tag Name | Added | Type | Description |
+|----------|-------|------|-------------|
+| rejectedParams | 5.0.0 | string array | An array of rejected parameters such as: [`hashId`] |
 
 
 ##### 3.1.3.3 Audio Service
@@ -300,14 +340,14 @@ No defined payloads at this time.
 >No parameters
 
 ###### 3.1.3.3.2 Start Service ACK
-| Tag Name| Type | Description |
-|------------|------|-------------|
-|mtu| int64 | Max transport unit to be used for this service. If not included the client should use the one set via the RPC service or protocol version default.|
+| Tag Name | Added | Type | Description |
+|----------|-------|------|-------------|
+| mtu | 5.0.0 | int64 | Max transport unit to be used for this service. If not included the client should use the one set via the RPC service or protocol version default. |
 
 ###### 3.1.3.3.3 Start Service NAK
-| Tag Name| Type | Description |
-|------------|------|-------------|
-| rejectedParams |String Array| An array of rejected parameters such as: [`videoProtocol`, `videoProtocol`]
+| Tag Name | Added | Type | Description |
+|----------|-------|------|-------------|
+| rejectedParams | 5.0.0 | string array| An array of rejected parameters such as: [`videoProtocol`, `videoProtocol`] |
 
 ###### 3.1.3.3.4 End Service
 >No parameters
@@ -316,34 +356,33 @@ No defined payloads at this time.
 >No parameters
 
 ###### 3.1.3.3.6 End Service NAK
-| Tag Name| Type | Description |
-|------------|------|-------------|
-| rejectedParams |String Array| An array of rejected parameters such as: [`hashId `]
+| Tag Name | Added | Type | Description |
+|----------|-------|------|-------------|
+| rejectedParams | 5.0.0 | string array | An array of rejected parameters such as: [`hashId `]
 
 ##### 3.1.3.4 Video Service
 
 ###### 3.1.3.4.1 Start Service
-| Tag Name| Type | Description |
-|------------|------|-------------|
-|height|int32| Desired height from the client requesting the video service to start|
-|width|int32| Desired width from the client requesting the video service to start|
-|videoProtocol|String| Desired video protocol to be used. See `VideoStreamingProtocol ` RPC|
-|videoCodec|String|  Desired video codec to be used. See `VideoStreamingCodec` RPC|
+| Tag Name | Added | Type | Description |
+|----------|-------|------|-------------|
+| height | 5.0.0 | int32 | Desired height from the client requesting the video service to start |
+| width | 5.0.0 | int32 | Desired width from the client requesting the video service to start |
+| videoProtocol | 5.0.0 | string | Desired video protocol to be used. See `VideoStreamingProtocol ` RPC |
+| videoCodec | 5.0.0 | string | Desired video codec to be used. See `VideoStreamingCodec` RPC |
 
 ###### 3.1.3.4.2 Start Service ACK
-| Tag Name| Type | Description |
-|------------|------|-------------|
-|mtu| int64 | Max transport unit to be used for this service. If not included the client should use the one set via the RPC service or protocol version default.|
-|height|int32| Accepted height from the client requesting the video service to start|
-|width|int32| Accepted width from the client requesting the video service to start|
-|videoProtocol|String| Accepted video protocol to be used. See `VideoStreamingProtocol ` RPC|
-|videoCodec|String|  Accepted video codec to be used. See `VideoStreamingCodec` RPC|
-
+| Tag Name | Added | Type | Description |
+|----------|-------|------|-------------|
+| mtu | 5.0.0 | int64 | Max transport unit to be used for this service. If not included the client should use the one set via the RPC service or protocol version default. |
+| height | 5.0.0 | int32 | Accepted height from the client requesting the video service to start |
+| width | 5.0.0 | int32 | Accepted width from the client requesting the video service to start |
+| videoProtocol | 5.0.0 | string | Accepted video protocol to be used. See `VideoStreamingProtocol ` RPC |
+| videoCodec | 5.0.0 | string |  Accepted video codec to be used. See `VideoStreamingCodec` RPC |
 
 ###### 3.1.3.4.3 Start Service NAK
-| Tag Name| Type | Description |
-|------------|------|-------------|
-| rejectedParams |String Array| An array of rejected parameters such as: [`videoProtocol`, `videoProtocol`]
+| Tag Name | Added | Type | Description |
+|----------|-------|------|-------------|
+| rejectedParams | 5.0.0 | string array | An array of rejected parameters such as: [`videoProtocol`, `videoProtocol`] |
 
 ###### 3.1.3.4.4 End Service
 >No parameters
@@ -352,11 +391,9 @@ No defined payloads at this time.
 >No parameters
 
 ###### 3.1.3.4.6 End Service NAK
-| Tag Name| Type | Description |
-|------------|------|-------------|
-| rejectedParams |String Array| An array of rejected parameters such as: [`hashId`]
-
-
+| Tag Name | Added | Type | Description |
+|----------|-------|------|-------------|
+| rejectedParams | 5.0.0 | string array | An array of rejected parameters such as: [`hashId`] |
 
 
 ### 3.2 Single Frame
