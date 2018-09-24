@@ -1,6 +1,6 @@
 # SmartDeviceLink Protocol
 
-**Current Version: 5.0.0**
+**Current Version: 5.1.0**
 
 ## 1. Overview
 The SmartDeviceLink protocol specification describes the method for establishing communication between an application and head unit and registering the application for continued communication with the head unit. The protocol is used as the base formation of packets sent from one module to another. 
@@ -161,7 +161,11 @@ All transported data is formed with a header followed by an optional payload. Th
       0x04 End Service<br>
       0x05 End Service ACK<br>
       0x06 End Service NAK<br>
-      0x07 - 0xFD Reserved<br>
+      0x07 Register Secondary Transport<br>
+      0x08 Register Secondary Transport ACK<br>
+      0x09 Register Secondary Transport NAK<br>
+      0x0A - 0xFC Reserved<br>
+      0xFD Transport Event Update<br>
       0xFE Service Data ACK<br>
       0xFF Heartbeat ACK<br>
       <b>Frame Type = 0x01 (Single Frame)</b><br>
@@ -245,6 +249,10 @@ Control frames are the lowest-level type of packets. They can be sent over any o
 | 0x04 | End Service | Requests that a specific type of service is ended
 | 0x05 | End Service ACK | Acknowledges that the specific service has been ended successfully
 | 0x06 | End Service NAK |  Negatively acknowledges that the specific service was *not* ended or has not yet been started
+| 0x07 | Register Secondary Transport | This frame is sent from application to Core to notify that Secondary Transport has been established.<br>This frame should be only sent on Secondary Transport.
+| 0x08 | Register Secondary Transport ACK | This frame is sent from Core to application to notify that Core has recognized Secondary Transport for the app.<br>This frame should be sent only on Secondary Transport. The application is allowed to send any frames on Secondary Transport only after receiving this frame.
+| 0x09 | Register Secondary Transport NAK | This frame is sent from Core to application to notify that Core could not recognize Secondary Transport for the app.<br>This frame should be sent only on Secondary Transport.
+| 0xFD | Transport Event Update | This frame is sent from Core to application to indicate that status or configuration of transport(s) is/are updated. This frame should not be sent prior to Version Negotiation.
 | 0xFE | Service Data ACK | *Deprecated*
 | 0xFF | Heartbeat ACK | Acknowledges that a Heartbeat control packet has been received
 
@@ -259,7 +267,27 @@ If there is no data to send for a given parameter, the parameter should not be i
 **Note:** Heartbeat, Heartbeat ACK, and Service Data ACK control frame types are not covered for any service as they were deprecated before payloads were introduced.
 
 ##### 3.1.3.1 Control Service
-No defined payloads at this time.
+
+###### 3.1.3.1.1 Register Secondary Transport
+
+>No parameters
+
+###### 3.1.3.1.2 Register Secondary Transport ACK
+
+>No parameters
+
+###### 3.1.3.1.3 Register Secondary Transport NAK
+
+| Tag Name | Type | Description |
+|----------|------|-------------|
+| reason | string | (Optional) Specify a string describing the reason of failure |
+
+###### 3.1.3.1.4 Transport Event Update
+
+| Tag Name | Type | Description |
+|----------|------|-------------|
+| tcpIpAddress | string | (Optional) Specify a string representation of IP address that Core is listening on. It can be IPv4 address (example: "192.168.1.1") or IPv6 address (example: "fd12:3456:789a::1").<br>An empty string indicates that the TCP transport becomes unavailable. |
+| tcpPort | int32 | (Optional) Specify TCP Port number that SDL is listening on. This value should be same as `TCPAdapterPort` in smartDeviceLink.ini file. |
 
 ##### 3.1.3.2 RPC Service
 
@@ -276,7 +304,22 @@ No defined payloads at this time.
 |protocolVersion|string|The negotiated version of the protocol. Must be in the format *"Major.Minor.Patch"*. The frame header version should match the major version exactly.|
 |hashId|int32| Hash ID to identify this session and used when sending an `EndService` control frame for the RPC service type|
 |mtu| int64 | Max transport unit to be used for this service|. If not included the client should use the protocol version default.|
+|secondaryTransports|String array|(Optional) Transport types which Core allows to use for Secondary Transport. Refer to the table below for possible values.<br>Right now Proxy implementation will not support utilizing more than one transports for Secondary Transport, so this array should contain at most one element.<br>This parameter is included in the Start Service frame for Version Negotiation. It should not be included in the Start Service frame on Secondary Transport.<br>If Core does not allow setting up Secondary Transport, it may make the array empty, or completely omit this parameter.|
+|audioServiceTransports|int32 array|(Optional) List of transports that are allowed to carry audio service. The value of int32 can be either `1` (meaning "Primary Transport") or `2` (meaning "Secondary Transport"), and the transports are listed in preferred order. An application must not start the service on a transport that is not listed in the array.<br>This parameter should not be included in the Start Service frame on Secondary Transport.<br>If Start Service ACK frame of Version Negotiation doesn't include this parameter then the application should choose Primary Transport for audio service.|
+|videoServiceTransports|int32 array|(Optional) List of transports that are allowed to carry video service. The value of int32 can be either `1` (meaning "Primary Transport") or `2` (meaning "Secondary Transport"), and the transports are listed in preferred order. An application must not start the service on a transport that is not listed in the array.<br>This parameter should not be included in the Start Service frame on Secondary Transport.<br>If Start Service ACK frame of Version Negotiation doesn't include this parameter then the application should choose Primary Transport for video service.|
 
+**list of transport type strings**
+
+| String | Description |
+|--------|-------------|
+| IAP\_BLUETOOTH | iAP over Bluetooth |
+| IAP\_USB | iAP over USB, and Core cannot distinguish between Host Mode and Device Mode. |
+| IAP\_USB\_HOST\_MODE | iAP over USB, and the phone is running as host |
+| IAP\_USB\_DEVICE\_MODE | iAP over USB, and the phone is running as device |
+| IAP\_CARPLAY | iAP over Carplay wireless |
+| SPP\_BLUETOOTH | Bluetooth SPP. Either legacy SPP or SPP multiplexing. |
+| AOA\_USB | Android Open Accessory |
+| TCP\_WIFI | TCP connection over Wi-Fi |
 
 ###### 3.1.3.2.3 Start Service NAK
 | Tag Name| Type | Description |
@@ -917,6 +960,188 @@ After a successful start service exchange between the application and head unit 
 
 #### 4.5.3 Heartbeat NAK
 There is currently no heartbeat NAK.
+
+### 4.6 Secondary Transport
+
+After successful Version Negotiation, an application may set up another physical transport between the head unit. This additional transport is called "Secondary Transport". The initial transport used for Version Negotiation is called "Primary Transport".
+
+#### 4.6.1 Secondary Transport registration
+
+During Version Negotiation, Core includes `secondaryTransports` parameter in Start Service ACK frame to notify which transport is available for Secondary Transport. Note that Core will not include the parameter if the application does not support protocol version 5.1.0 or higher.
+
+The application may initiate a connection for Secondary Transport after it receives Start Service ACK frame with the parameter.
+
+Once the connection for Secondary Transport is established, the application must send out Register Secondary Transport frame on the transport. Core responds with either Register Secondary Transport ACK frame or Register Secondary Transport NAK frame. The application may utilize Secondary Transport once it receives Register Secondary Transport ACK frame.
+
+##### 4.6.1.1 Register Secondary Transport request
+
+##### Application -> Head Unit
+
+<table width="100%">
+  <tr>
+    <th>Version</th>
+    <th>E</th>
+    <th>Frame Type</th>
+    <th>Service Type</th>
+    <th>Frame Info</th>
+    <th>Session Id</th>
+    <th>Data Size</th>
+    <th>Message ID</th>
+  </tr>
+  <tr>
+    <td>Max major version supported by module and application</td>
+    <td>no</td>
+    <td>Control</td>
+    <td>Control</td>
+    <td>Register Secondary Transport</td>
+    <td>Session Id assigned on Primary Transport</td>
+    <td>0</td>
+    <td>1</td>
+  </tr>
+  <tr>
+    <td>0bNNNN</td>
+    <td>0b0</td>
+    <td>0b000</td>
+    <td>0x00</td>
+    <td>0x07</td>
+    <td>0xNN</td>
+    <td>0x00000000</td>
+    <td>0x00000001</td>
+  </tr>
+</table>
+
+##### 4.6.1.2 Register Secondary Transport ACK
+
+##### Head Unit -> Application
+
+<table width="100%">
+  <tr>
+    <th>Version</th>
+    <th>E</th>
+    <th>Frame Type</th>
+    <th>Service Type</th>
+    <th>Frame Info</th>
+    <th>Session Id</th>
+    <th>Data Size</th>
+    <th>Message ID</th>
+  </tr>
+  <tr>
+    <td>Max major version supported by module and application</td>
+    <td>no</td>
+    <td>Control</td>
+    <td>Control</td>
+    <td>Register Secondary Transport ACK</td>
+    <td>Session Id assigned on Primary Transport</td>
+    <td>0</td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td>0bNNNN</td>
+    <td>0b0</td>
+    <td>0b000</td>
+    <td>0x00</td>
+    <td>0x08</td>
+    <td>0xNN</td>
+    <td>0x00000000</td>
+    <td>0x00000002</td>
+  </tr>
+</table>
+
+##### 4.6.1.3 Register Secondary Transport NAK
+
+##### Head Unit -> Application
+
+<table width="100%">
+  <tr>
+    <th>Version</th>
+    <th>E</th>
+    <th>Frame Type</th>
+    <th>Service Type</th>
+    <th>Frame Info</th>
+    <th>Session Id</th>
+    <th>Data Size</th>
+    <th>Message ID</th>
+  </tr>
+  <tr>
+    <td>Max major version supported by module and application if known, otherwise 5</td>
+    <td>no</td>
+    <td>Control</td>
+    <td>Control</td>
+    <td>Register Secondary Transport NAK</td>
+    <td>Session Id assigned on Primary Transport</td>
+    <td>0</td>
+    <td>2</td>
+  </tr>
+  <tr>
+    <td>0bNNNN</td>
+    <td>0b0</td>
+    <td>0b000</td>
+    <td>0x00</td>
+    <td>0x09</td>
+    <td>0xNN</td>
+    <td>0x00000000</td>
+    <td>0x00000002</td>
+  </tr>
+</table>
+
+#### 4.6.2 Notification of the information required to set up TCP transport
+
+Core may provide additional information that is required to set up Secondary Transport. For example, an application needs to know the head unit's IP address and TCP port number to establish a TCP transport.
+
+Transport Event Update control frame is used for this purpose. Core will send out the frame whenever its transport configuration is changed, for example when its IP address is updated or Wi-Fi network goes down. Core will also send out the frame right after Start Service ACK frame of Version Negotiation, so that the application can initiate Secondary Transport's connection immediately.
+
+Transport Event Update frame is always delivered through Primary Transport. Core should not send the frame to applications that don't support protocol version 5.1.0. Due to this nature, the frame won't be sent out before Version Negotiation.
+
+##### 4.6.2.1 Transport Event Update
+
+##### Head Unit -> Application
+
+<table width="100%">
+  <tr>
+    <th>Version</th>
+    <th>E</th>
+    <th>Frame Type</th>
+    <th>Service Type</th>
+    <th>Frame Info</th>
+    <th>Session Id</th>
+    <th>Data Size</th>
+    <th>Message ID</th>
+  </tr>
+  <tr>
+    <td>Max major version supported by module and application</td>
+    <td>no</td>
+    <td>Control</td>
+    <td>Control</td>
+    <td>Transport Event Update</td>
+    <td>Session Id assigned on Primary Transport</td>
+    <td>Size of payload</td>
+    <td>Variable</td>
+  </tr>
+  <tr>
+    <td>0bNNNN</td>
+    <td>0b0</td>
+    <td>0b000</td>
+    <td>0x00</td>
+    <td>0xFD</td>
+    <td>0xNN</td>
+    <td>0xNNNNNNNN</td>
+    <td>0xNNNNNNNN</td>
+  </tr>
+</table>
+
+#### 4.6.3 Starting services on Secondary Transport
+
+Secondary Transport is capable of carrying video and audio services. Other services, including RPC service and Hybrid service, must always run on Primary Transport.
+
+During Version Negotiation, Core includes parameters called `audioServiceTransports` and `videoServiceTransports` through Start Service ACK frame describing which service is allowed to run on which transports (Primary, Secondary or both). An application honors this information and starts the service(s) only on an allowed transport. For example, if video service is allowed only on Secondary Transport, the application will not start video streaming until Secondary Transport is established and registered.
+
+The transports included in the parameters are listed in preferred order, for example, Secondary > Primary. In case the priority of Secondary Transport is higher than that of Primary Transport, the application will stop and restart service(s) when Secondary Transport is added or removed. The application must not run a single service on both transports at a time.
+
+When starting a service over Secondary Transport, the application runs the sequence of Start Service and Start Service ACK frames as described in section 4.4. The Start Service frame includes Session ID which has been provided by Start Service ACK frame on Primary Transport.
+
+#### 4.6.4 Terminating Secondary Transport
+
+There is no procedure to terminate Secondary Transport. Core and the application must disconnect Secondary Transport when the application is unregistered and its Primary Transport is disconnected.
 
 ## 5. Services
 Every active session has the ability to start any of the services defined in this protocol spec as long as they have permission on the module in which they are connected. Every session can only have one of each type of service open at a time. 
