@@ -249,16 +249,16 @@ Control frames are the lowest-level type of packets. They can be sent over any o
 | 0x04 | End Service | Requests that a specific type of service is ended
 | 0x05 | End Service ACK | Acknowledges that the specific service has been ended successfully
 | 0x06 | End Service NAK |  Negatively acknowledges that the specific service was *not* ended or has not yet been started
-| 0x07 | Register Secondary Transport | This frame is sent from application to Core to notify that Secondary Transport has been established.<br>This frame should be only sent on Secondary Transport.
-| 0x08 | Register Secondary Transport ACK | This frame is sent from Core to application to notify that Core has recognized Secondary Transport for the app.<br>This frame should be sent only on Secondary Transport. The application is allowed to send any frames on Secondary Transport only after receiving this frame.
-| 0x09 | Register Secondary Transport NAK | This frame is sent from Core to application to notify that Core could not recognize Secondary Transport for the app.<br>This frame should be sent only on Secondary Transport.
-| 0xFD | Transport Event Update | This frame is sent from Core to application to indicate that status or configuration of transport(s) is/are updated. This frame should not be sent prior to Version Negotiation.
+| 0x07 | Register Secondary Transport | Request for a session registered on a primary transport to use a secondary transport. <br>This frame should only be sent on the Secondary Transport that the session is requesting.
+| 0x08 | Register Secondary Transport ACK | Acknowledges that the supplied session is registered to use the requested Secondary Transport. The application is only allowed to send additional frames on the Secondary Transport after this frame is received. <br>This frame must be sent on the Secondary Transport in which the original request was sent. 
+| 0x09 | Register Secondary Transport NAK | Negatively acknowledges that the session is not registered or able to use the current Secondary Transport. The application cannot use this transport for any other messages. <br>This frame must be sent on the Secondary Transport in which the original request was sent. 
+| 0xFD | Transport Event Update | Indicates that status or configuration of one or more transports are updated. This frame must only be sent after the successful starting of the RPC service which includes the protocol version negotiation.
 | 0xFE | Service Data ACK | *Deprecated*
 | 0xFF | Heartbeat ACK | Acknowledges that a Heartbeat control packet has been received
 
 #### 3.1.3 Payloads
 >Added: Protocol Version 5<br>
->*Note: All paramaters are optional*<br>
+>*Note: All parameters are optional*<br>
 
 Control frames use [BSON](http://bsonspec.org) to store payload data. All payload types are directly from the BSON spec. Each control frame info type will have a defined set of available data. Most types will also have differently available data based on their service type.
 
@@ -280,14 +280,14 @@ If there is no data to send for a given parameter, the parameter should not be i
 
 | Tag Name | Type | Description |
 |----------|------|-------------|
-| reason | string | (Optional) Specify a string describing the reason of failure |
+| reason | string | Specify a string describing the reason of failure |
 
 ###### 3.1.3.1.4 Transport Event Update
 
 | Tag Name | Type | Description |
 |----------|------|-------------|
-| tcpIpAddress | string | (Optional) Specify a string representation of IP address that Core is listening on. It can be IPv4 address (example: "192.168.1.1") or IPv6 address (example: "fd12:3456:789a::1").<br>An empty string indicates that the TCP transport becomes unavailable. |
-| tcpPort | int32 | (Optional) Specify TCP Port number that SDL is listening on. This value should be same as `TCPAdapterPort` in smartDeviceLink.ini file. |
+| tcpIpAddress | String | IP address that can be used to establish a TCP connection. It can be IPv4 address (example: "192.168.1.1") or IPv6 address (example: "fd12:3456:789a::1").<br>An empty string indicates that the TCP transport becomes unavailable. |
+| tcpPort | int32 |  TCP Port number that can be used along with the supplied `tcpIpAddress` to establish a TCP connection. If parameter is included, the `tcpIpAddress` parameter must also be included.|
 
 ##### 3.1.3.2 RPC Service
 
@@ -296,28 +296,28 @@ If there is no data to send for a given parameter, the parameter should not be i
 
 | Tag Name| Type | Description |
 |------------|------|-------------|
-|protocolVersion|string| The max version of the protocol supported by client requesting service to start. Must be in the format *"Major.Minor.Patch"*|
+|protocolVersion|String| The max version of the protocol supported by client requesting service to start. Must be in the format *"Major.Minor.Patch"*|
 
 ###### 3.1.3.2.2 Start Service ACK
 | Tag Name| Type | Description |
 |------------|------|-------------|
-|protocolVersion|string|The negotiated version of the protocol. Must be in the format *"Major.Minor.Patch"*. The frame header version should match the major version exactly.|
+|protocolVersion|String|The negotiated version of the protocol. Must be in the format *"Major.Minor.Patch"*. The frame header version should match the major version exactly.|
 |hashId|int32| Hash ID to identify this session and used when sending an `EndService` control frame for the RPC service type|
 |mtu| int64 | Max transport unit to be used for this service|. If not included the client should use the protocol version default.|
-|secondaryTransports|String array|(Optional) Transport types which Core allows to use for Secondary Transport. Refer to the table below for possible values.<br>Right now Proxy implementation will not support utilizing more than one transports for Secondary Transport, so this array should contain at most one element.<br>This parameter is included in the Start Service frame for Version Negotiation. It should not be included in the Start Service frame on Secondary Transport.<br>If Core does not allow setting up Secondary Transport, it may make the array empty, or completely omit this parameter.|
-|audioServiceTransports|int32 array|(Optional) List of transports that are allowed to carry audio service. The value of int32 can be either `1` (meaning "Primary Transport") or `2` (meaning "Secondary Transport"), and the transports are listed in preferred order. An application must not start the service on a transport that is not listed in the array.<br>This parameter should not be included in the Start Service frame on Secondary Transport.<br>If Start Service ACK frame of Version Negotiation doesn't include this parameter then the application should choose Primary Transport for audio service.|
-|videoServiceTransports|int32 array|(Optional) List of transports that are allowed to carry video service. The value of int32 can be either `1` (meaning "Primary Transport") or `2` (meaning "Secondary Transport"), and the transports are listed in preferred order. An application must not start the service on a transport that is not listed in the array.<br>This parameter should not be included in the Start Service frame on Secondary Transport.<br>If Start Service ACK frame of Version Negotiation doesn't include this parameter then the application should choose Primary Transport for video service.|
+|secondaryTransports|String Array| Array of transport types which are allowed to be used as a Secondary Transport. Refer to the table below for possible values.<br>As of this protocol spec version (5.1.0) only a single Secondary Transport may be used beyond a primary transport for a given session.<br>If there are no currently available Secondary Transports or the functionality is not supported, this parameter should be omitted or be an empty array.|
+|audioServiceTransports|int32 array| Ordered list of transport priority types that support the audio service (`0x0A`). Only the values of `1` ("Primary Transport") or `2` ("Secondary Transport") shall be used. If both the primary and secondary transport support the audio service, both should be included (`1` and `2`) in the order they are preferred; otherwise only the single transport priority type should be included. An application must not start the audio service on a transport priority type that is not listed in the array.<br>If this parameter is not included the Primary Transport should be used for the audio service.|
+|videoServiceTransports|int32 array| Ordered list of transport priority types that support the video service (`0x0B`). Only the values of `1` ("Primary Transport") or `2` ("Secondary Transport") shall be used. If both the primary and secondary transport support the video service, both should be included (`1` and `2`) in the order they are preferred; otherwise only the single transport priority type should be included. An application must not start the video service on a transport priority type that is not listed in the array.<br>If this parameter is not included the Primary Transport should be used for the video service.|
 
 **list of transport type strings**
 
 | String | Description |
 |--------|-------------|
 | IAP\_BLUETOOTH | iAP over Bluetooth |
-| IAP\_USB | iAP over USB, and Core cannot distinguish between Host Mode and Device Mode. |
+| IAP\_USB | iAP over USB where it is not possible to distinguish between host or device mode|
 | IAP\_USB\_HOST\_MODE | iAP over USB, and the phone is running as host |
 | IAP\_USB\_DEVICE\_MODE | iAP over USB, and the phone is running as device |
 | IAP\_CARPLAY | iAP over Carplay wireless |
-| SPP\_BLUETOOTH | Bluetooth SPP. Either legacy SPP or SPP multiplexing. |
+| SPP\_BLUETOOTH | Bluetooth SPP. |
 | AOA\_USB | Android Open Accessory |
 | TCP\_WIFI | TCP connection over Wi-Fi |
 
@@ -963,17 +963,17 @@ There is currently no heartbeat NAK.
 
 ### 4.6 Secondary Transport
 
-After successful Version Negotiation, an application may set up another physical transport between the head unit. This additional transport is called "Secondary Transport". The initial transport used for Version Negotiation is called "Primary Transport".
+>Added: Protocol version 5.1.0
 
-#### 4.6.1 Secondary Transport registration
+After the RPC service has been established on an initial transport, it is possible to utilize a different transport beyond the initial transport for certain services.  This additional transport is called the "Secondary Transport". The initial transport used to start the RPC service is called the "Primary Transport".
 
-During Version Negotiation, Core includes `secondaryTransports` parameter in Start Service ACK frame to notify which transport is available for Secondary Transport. Note that Core will not include the parameter if the application does not support protocol version 5.1.0 or higher.
+#### 4.6.1 Secondary Transport Registration
 
-The application may initiate a connection for Secondary Transport after it receives Start Service ACK frame with the parameter.
+The RPC `StartServiceACK` will include information on potential Secondary Transports in the parameter `secondaryTransports` if any are supported. Once received, it is possible to register the session on the Secondary Transport if connected; if the transport is not connected it will have to either wait until an update is received through the `TransportEventUpdated` frame or the physical connection is made.
 
-Once the connection for Secondary Transport is established, the application must send out Register Secondary Transport frame on the transport. Core responds with either Register Secondary Transport ACK frame or Register Secondary Transport NAK frame. The application may utilize Secondary Transport once it receives Register Secondary Transport ACK frame.
+Once the connection for Secondary Transport is established, if the application wishes to utilize that transport as a SecondaryTransport, the application is required to send a `RegisterSecondaryTransport` frame on that transport. The head unit will respond with either a`RegisterSecondaryTransportACK` or `RegisterSecondaryTransportNAK` frame. If the registration was successful and the application receives a `RegisterSecondaryTransportACK`, it may then utilize the Secondary Transport to start services.
 
-##### 4.6.1.1 Register Secondary Transport request
+##### 4.6.1.1 RegisterSecondaryTransport
 
 ##### Application -> Head Unit
 
@@ -1010,7 +1010,7 @@ Once the connection for Secondary Transport is established, the application must
   </tr>
 </table>
 
-##### 4.6.1.2 Register Secondary Transport ACK
+##### 4.6.1.2 RegisterSecondaryTransportACK
 
 ##### Head Unit -> Application
 
@@ -1047,7 +1047,7 @@ Once the connection for Secondary Transport is established, the application must
   </tr>
 </table>
 
-##### 4.6.1.3 Register Secondary Transport NAK
+##### 4.6.1.3 RegisterSecondaryTransportNAK
 
 ##### Head Unit -> Application
 
@@ -1084,15 +1084,16 @@ Once the connection for Secondary Transport is established, the application must
   </tr>
 </table>
 
-#### 4.6.2 Notification of the information required to set up TCP transport
 
-Core may provide additional information that is required to set up Secondary Transport. For example, an application needs to know the head unit's IP address and TCP port number to establish a TCP transport.
+#### 4.6.2 Transport Event Update
 
-Transport Event Update control frame is used for this purpose. Core will send out the frame whenever its transport configuration is changed, for example when its IP address is updated or Wi-Fi network goes down. Core will also send out the frame right after Start Service ACK frame of Version Negotiation, so that the application can initiate Secondary Transport's connection immediately.
+Some Secondary Transports might require additional details on how they can be established. For example, in order to establish a TCP connection between the application and head unit the IP address and port number are required. The `TransportEventUpdate` control frame is used for this purpose. 
 
-Transport Event Update frame is always delivered through Primary Transport. Core should not send the frame to applications that don't support protocol version 5.1.0. Due to this nature, the frame won't be sent out before Version Negotiation.
+The head unit will send out a `TransportEventUpdate` frame whenever its transport configuration is changed, for example when its IP address is updated or Wi-Fi network goes down. The head unit will also send out a `TransportEventUpdate` frame right after the `StartServiceACK` frame that establishes the RPC service so the application can initiate a connection immediately.
 
-##### 4.6.2.1 Transport Event Update
+The `TransportEventUpdate` frame must always be sent through the Primary Transport. The head unit should not send the frame to applications that don't support protocol versions 5.1.0 or newer.
+
+##### 4.6.2.1 TransportEventUpdate
 
 ##### Head Unit -> Application
 
@@ -1128,20 +1129,28 @@ Transport Event Update frame is always delivered through Primary Transport. Core
     <td>0xNNNNNNNN</td>
   </tr>
 </table>
+<table width=100% >
+	<tr>
+  		<th colspan="8">Payload</th>
+  	</tr>
+  	<tr align="center">
+  		<td colspan="8" > [tcpIpAddress:"x.x.x.x", tcpPort:NNNN]</td
+  	</tr>
+</table>
 
-#### 4.6.3 Starting services on Secondary Transport
+#### 4.6.3 Starting Services on Secondary Transports
 
-Secondary Transport is capable of carrying video and audio services. Other services, including RPC service and Hybrid service, must always run on Primary Transport.
+A Secondary Transport is capable of carrying  the video and audio services. Other services, including RPC and Hybrid service, must always run on the Primary Transport. (Note: Control service is an inherently started service on a transport and does not need to be established, but frames will be handled on a frame by frame basis of Primary vs Secondary Transport support)
 
-During Version Negotiation, Core includes parameters called `audioServiceTransports` and `videoServiceTransports` through Start Service ACK frame describing which service is allowed to run on which transports (Primary, Secondary or both). An application honors this information and starts the service(s) only on an allowed transport. For example, if video service is allowed only on Secondary Transport, the application will not start video streaming until Secondary Transport is established and registered.
+The RPC `StartServiceACK` might include the parameters `audioServiceTransports` and `videoServiceTransports` describing which service is allowed to run on which transport priority type (Primary, Secondary or both). An application honors this information and starts the service(s) only on an allowed transport. For example, if video service is allowed only on a Secondary Transport, the application will not start video streaming until Secondary Transport is established and registered.
 
-The transports included in the parameters are listed in preferred order, for example, Secondary > Primary. In case the priority of Secondary Transport is higher than that of Primary Transport, the application will stop and restart service(s) when Secondary Transport is added or removed. The application must not run a single service on both transports at a time.
+The transport priority types included in these parameters are listed in preferred order, for example, `[2,1]` (Secondary , Primary). In this case the priority of the Secondary Transport is higher than that of Primary Transport, the application may stop and restart service(s) when the Secondary Transport is added or removed. However,  each service type must only be started and carried on a single transport at a time. 
 
-When starting a service over Secondary Transport, the application runs the sequence of Start Service and Start Service ACK frames as described in section 4.4. The Start Service frame includes Session ID which has been provided by Start Service ACK frame on Primary Transport.
+When starting a service over a Secondary Transport the application, it must follow the previous sections to establish the transport connection and register its session over that transport. At that point it runs the normal sequence described in section 4.4. When starting a service over a Secondary Transport, the session ID that was provided during the establishment of the RPC service should be used.
 
 #### 4.6.4 Terminating Secondary Transport
 
-There is no procedure to terminate Secondary Transport. Core and the application must disconnect Secondary Transport when the application is unregistered and its Primary Transport is disconnected.
+There is no procedure to terminate a Secondary Transport. However, if the Primary Transport is disconnected or the RPC service is stopped, any Secondary Transport for that session should be unregistered and if no other sessions are registered over that Secondary Transport it should be disconnected.
 
 ## 5. Services
 Every active session has the ability to start any of the services defined in this protocol spec as long as they have permission on the module in which they are connected. Every session can only have one of each type of service open at a time. 
