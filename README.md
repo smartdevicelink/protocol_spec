@@ -1,6 +1,6 @@
 # SmartDeviceLink Protocol
 
-**Current Version: 5.1.0**
+**Current Version: 5.2.0**
 
 ## 1. Overview
 The SmartDeviceLink protocol specification describes the method for establishing communication between an application and head unit and registering the application for continued communication with the head unit. The protocol is used as the base formation of packets sent from one module to another. 
@@ -278,35 +278,36 @@ If there is no data to send for a given parameter, the parameter should not be i
 
 ###### 3.1.3.1.3 Register Secondary Transport NAK
 
-| Tag Name | Type | Description |
-|----------|------|-------------|
-| reason | string | Specify a string describing the reason of failure |
+| Tag Name | Type | Introduced | Description |
+|----------|------|------------|-------------|
+| reason | string | 5.1.0 | Specify a string describing the reason of failure |
 
 ###### 3.1.3.1.4 Transport Event Update
 
-| Tag Name | Type | Description |
-|----------|------|-------------|
-| tcpIpAddress | String | IP address that can be used to establish a TCP connection. It can be IPv4 address (example: "192.168.1.1") or IPv6 address (example: "fd12:3456:789a::1").<br>An empty string indicates that the TCP transport becomes unavailable. |
-| tcpPort | int32 |  TCP Port number that can be used along with the supplied `tcpIpAddress` to establish a TCP connection. If parameter is included, the `tcpIpAddress` parameter must also be included.|
+| Tag Name | Type | Introduced | Description |
+|----------|------|------------|-------------|
+| tcpIpAddress | String | 5.1.0 | IP address that can be used to establish a TCP connection. It can be IPv4 address (example: "192.168.1.1") or IPv6 address (example: "fd12:3456:789a::1").<br>An empty string indicates that the TCP transport becomes unavailable. |
+| tcpPort | int32 | 5.1.0 |  TCP Port number that can be used along with the supplied `tcpIpAddress` to establish a TCP connection. If parameter is included, the `tcpIpAddress` parameter must also be included.|
 
 ##### 3.1.3.2 RPC Service
 
 ###### 3.1.3.2.1 Start Service
 **Note:** While this includes a payload, it will remain a v1 frame header to ensure backwards compatibility with older systems.
 
-| Tag Name| Type | Description |
-|------------|------|-------------|
-|protocolVersion|String| The max version of the protocol supported by client requesting service to start. Must be in the format *"Major.Minor.Patch"*|
+| Tag Name | Type | Introduced | Description |
+|----------|------|------------|-------------|
+|protocolVersion|String| 5.0.0 | The max version of the protocol supported by client requesting service to start. Must be in the format *"Major.Minor.Patch"*|
 
 ###### 3.1.3.2.2 Start Service ACK
-| Tag Name| Type | Description |
-|------------|------|-------------|
-|protocolVersion|String|The negotiated version of the protocol. Must be in the format *"Major.Minor.Patch"*. The frame header version should match the major version exactly.|
-|hashId|int32| Hash ID to identify this session and used when sending an `EndService` control frame for the RPC service type|
-|mtu| int64 | Max transport unit to be used for this service|. If not included the client should use the protocol version default.|
-|secondaryTransports|String Array| Array of transport types which are allowed to be used as a Secondary Transport. Refer to the table below for possible values.<br>As of this protocol spec version (5.1.0) only a single Secondary Transport may be used beyond a primary transport for a given session.<br>If there are no currently available Secondary Transports or the functionality is not supported, this parameter should be omitted or be an empty array.|
-|audioServiceTransports|int32 array| Ordered list of transport priority types that support the audio service (`0x0A`). Only the values of `1` ("Primary Transport") or `2` ("Secondary Transport") shall be used. If both the primary and secondary transport support the audio service, both should be included (`1` and `2`) in the order they are preferred; otherwise only the single transport priority type should be included. An application must not start the audio service on a transport priority type that is not listed in the array.<br>If this parameter is not included the Primary Transport should be used for the audio service.|
-|videoServiceTransports|int32 array| Ordered list of transport priority types that support the video service (`0x0B`). Only the values of `1` ("Primary Transport") or `2` ("Secondary Transport") shall be used. If both the primary and secondary transport support the video service, both should be included (`1` and `2`) in the order they are preferred; otherwise only the single transport priority type should be included. An application must not start the video service on a transport priority type that is not listed in the array.<br>If this parameter is not included the Primary Transport should be used for the video service.|
+| Tag Name | Type | Introduced | Description |
+|----------|------|------------|-------------|
+|protocolVersion|String| 5.0.0 |The negotiated version of the protocol. Must be in the format *"Major.Minor.Patch"*. The frame header version should match the major version exactly.|
+|hashId|int32| 5.0.0 | Hash ID to identify this session and used when sending an `EndService` control frame for the RPC service type|
+|mtu| int64 | 5.0.0 | Max transport unit to be used for this service|. If not included the client should use the protocol version default.|
+|secondaryTransports|String Array| 5.1.0 | Array of transport types which are allowed to be used as a Secondary Transport. Refer to the table below for possible values.<br>As of this protocol spec version (5.1.0) only a single Secondary Transport may be used beyond a primary transport for a given session.<br>If there are no currently available Secondary Transports or the functionality is not supported, this parameter should be omitted or be an empty array.|
+|audioServiceTransports|int32 array| 5.1.0 | Ordered list of transport priority types that support the audio service (`0x0A`). Only the values of `1` ("Primary Transport") or `2` ("Secondary Transport") shall be used. If both the primary and secondary transport support the audio service, both should be included (`1` and `2`) in the order they are preferred; otherwise only the single transport priority type should be included. An application must not start the audio service on a transport priority type that is not listed in the array.<br>If this parameter is not included the Primary Transport should be used for the audio service.|
+|videoServiceTransports|int32 array| 5.1.0 | Ordered list of transport priority types that support the video service (`0x0B`). Only the values of `1` ("Primary Transport") or `2` ("Secondary Transport") shall be used. If both the primary and secondary transport support the video service, both should be included (`1` and `2`) in the order they are preferred; otherwise only the single transport priority type should be included. An application must not start the video service on a transport priority type that is not listed in the array.<br>If this parameter is not included the Primary Transport should be used for the video service.|
+|authToken|String| 5.2.0 | Included exclusively when communicating with cloud applications. This token is used by a cloud application to authenticate a user account associated with the vehicle. |
 
 **list of transport type strings**
 
@@ -322,20 +323,20 @@ If there is no data to send for a given parameter, the parameter should not be i
 | TCP\_WIFI | TCP connection over Wi-Fi |
 
 ###### 3.1.3.2.3 Start Service NAK
-| Tag Name| Type | Description |
-|------------|------|-------------|
-| rejectedParams |String Array| An array of rejected parameters|
+| Tag Name | Type | Introduced | Description |
+|----------|------|------------|-------------|
+| rejectedParams |String Array| 5.0.0 | An array of rejected parameters|
 
 ###### 3.1.3.2.4 End Service
-| Tag Name| Type | Description |
-|------------|------|-------------|
-|hashId|int32| Hash ID supplied in the `StartServiceACK` for this service type|
+| Tag Name | Type | Introduced | Description |
+|----------|------|------------|-------------|
+|hashId|int32| 5.0.0 | Hash ID supplied in the `StartServiceACK` for this service type|
 ###### 3.1.3.2.5 End Service ACK
 
 ###### 3.1.3.2.6 End Service NAK
-| Tag Name| Type | Description |
-|------------|------|-------------|
-| rejectedParams |String Array| An array of rejected parameters such as: [`hashId`]
+| Tag Name | Type | Introduced | Description |
+|----------|------|------------|-------------|
+| rejectedParams |String Array| 5.0.0 | An array of rejected parameters such as: [`hashId`] |
 
 
 ##### 3.1.3.3 Audio Service
@@ -343,14 +344,14 @@ If there is no data to send for a given parameter, the parameter should not be i
 >No parameters
 
 ###### 3.1.3.3.2 Start Service ACK
-| Tag Name| Type | Description |
-|------------|------|-------------|
-|mtu| int64 | Max transport unit to be used for this service. If not included the client should use the one set via the RPC service or protocol version default.|
+| Tag Name | Type | Introduced | Description |
+|----------|------|------------|-------------|
+|mtu| int64 | 5.0.0 | Max transport unit to be used for this service. If not included the client should use the one set via the RPC service or protocol version default.|
 
 ###### 3.1.3.3.3 Start Service NAK
-| Tag Name| Type | Description |
-|------------|------|-------------|
-| rejectedParams |String Array| An array of rejected parameters such as: [`videoProtocol`, `videoProtocol`]
+| Tag Name | Type | Introduced | Description |
+|----------|------|------------|-------------|
+| rejectedParams |String Array| 5.0.0 | An array of rejected parameters such as: [`videoProtocol`, `videoCodec`] |
 
 ###### 3.1.3.3.4 End Service
 >No parameters
@@ -359,34 +360,34 @@ If there is no data to send for a given parameter, the parameter should not be i
 >No parameters
 
 ###### 3.1.3.3.6 End Service NAK
-| Tag Name| Type | Description |
-|------------|------|-------------|
-| rejectedParams |String Array| An array of rejected parameters such as: [`hashId `]
+| Tag Name | Type | Introduced | Description |
+|----------|------|------------|-------------|
+| rejectedParams |String Array| 5.0.0 | An array of rejected parameters such as: [`hashId`] |
 
 ##### 3.1.3.4 Video Service
 
 ###### 3.1.3.4.1 Start Service
-| Tag Name| Type | Description |
-|------------|------|-------------|
-|height|int32| Desired height from the client requesting the video service to start|
-|width|int32| Desired width from the client requesting the video service to start|
-|videoProtocol|String| Desired video protocol to be used. See `VideoStreamingProtocol ` RPC|
-|videoCodec|String|  Desired video codec to be used. See `VideoStreamingCodec` RPC|
+| Tag Name | Type | Introduced | Description |
+|----------|------|------------|-------------|
+|height|int32| 5.0.0 | Desired height from the client requesting the video service to start|
+|width|int32| 5.0.0 | Desired width from the client requesting the video service to start|
+|videoProtocol|String| 5.0.0 | Desired video protocol to be used. See `VideoStreamingProtocol ` RPC|
+|videoCodec|String| 5.0.0 | Desired video codec to be used. See `VideoStreamingCodec` RPC|
 
 ###### 3.1.3.4.2 Start Service ACK
-| Tag Name| Type | Description |
-|------------|------|-------------|
-|mtu| int64 | Max transport unit to be used for this service. If not included the client should use the one set via the RPC service or protocol version default.|
-|height|int32| Accepted height from the client requesting the video service to start|
-|width|int32| Accepted width from the client requesting the video service to start|
-|videoProtocol|String| Accepted video protocol to be used. See `VideoStreamingProtocol ` RPC|
-|videoCodec|String|  Accepted video codec to be used. See `VideoStreamingCodec` RPC|
+| Tag Name | Type | Introduced | Description |
+|----------|------|------------|-------------|
+|mtu| int64 | 5.0.0 | Max transport unit to be used for this service. If not included the client should use the one set via the RPC service or protocol version default.|
+|height|int32| 5.0.0 | Accepted height from the client requesting the video service to start|
+|width|int32| 5.0.0 | Accepted width from the client requesting the video service to start|
+|videoProtocol|String| 5.0.0 | Accepted video protocol to be used. See `VideoStreamingProtocol ` RPC|
+|videoCodec|String| 5.0.0 | Accepted video codec to be used. See `VideoStreamingCodec` RPC|
 
 
 ###### 3.1.3.4.3 Start Service NAK
-| Tag Name| Type | Description |
-|------------|------|-------------|
-| rejectedParams |String Array| An array of rejected parameters such as: [`videoProtocol`, `videoProtocol`]
+| Tag Name | Type | Introduced | Description |
+|----------|------|------------|-------------|
+| rejectedParams |String Array| 5.0.0 | An array of rejected parameters such as: [`videoProtocol`, `videoCodec`] |
 
 ###### 3.1.3.4.4 End Service
 >No parameters
@@ -395,9 +396,9 @@ If there is no data to send for a given parameter, the parameter should not be i
 >No parameters
 
 ###### 3.1.3.4.6 End Service NAK
-| Tag Name| Type | Description |
-|------------|------|-------------|
-| rejectedParams |String Array| An array of rejected parameters such as: [`hashId`]
+| Tag Name | Type | Introduced | Description |
+|----------|------|------------|-------------|
+| rejectedParams |String Array| 5.0.0 | An array of rejected parameters such as: [`hashId`] |
 
 
 
