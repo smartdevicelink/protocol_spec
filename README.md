@@ -1227,8 +1227,8 @@ The payload of a message sent via the RPC service, which directly follows the Fr
   </tr>
   <tr>
     <td>Correlation ID</td>
-    <td>32 bits</td>
-    <td>The Correlation ID is used to map a request to its response. Requests sent in the same session with the same Correlation ID as a pending request will be rejected with an `INVALID_ID` response. In Protocol Version 1, when the Binary Header did not exist, the Correlation ID was included as part of the JSON and has a max value of 65536.</td>
+    <td>32 bits (signed)</td>
+    <td>The Correlation ID is used to map a request to its response. Requests sent in the same session with the same Correlation ID as a pending request will be rejected with an `INVALID_ID` response. Requests that use a Correlation ID less than 0 will be rejected with an `INVALID_ID` response. In Protocol Version 1, when the Binary Header did not exist, the Correlation ID was included as part of the JSON and has a max value of 65536.</td>
   </tr>
   <tr>
     <td>JSON Size</td>
