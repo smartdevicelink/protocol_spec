@@ -95,6 +95,7 @@ All transported data is formed with a header followed by an optional payload. Th
 </table>
 
 ### 2.3 Frame Header Fields
+
 <table width="100%">
   <tr>
     <th>Field</th>
@@ -229,6 +230,7 @@ The payload size is determined by the MTU - Frame Header Size.
 While the supported MTU is the maximum size for that version, if a frame is encrypted it will be subject to the MTU of that encryption protocol as well. That means the MTU will have to be the minimum between SDL's MTU  and the encryption protocol's MTU. 
 
 ## 3. Frame Types
+
 ### 3.1 Control Frame 
 Control frames are the lowest-level type of packets. They can be sent over any of the defined services. They are used for the control of the services in which they are sent.
 
@@ -331,6 +333,7 @@ If there is no data to send for a given parameter, the parameter should not be i
 | Tag Name | Type | Introduced | Description |
 |----------|------|------------|-------------|
 |hashId|int32| 5.0.0 | Hash ID supplied in the `StartServiceACK` for this service type|
+
 ###### 3.1.3.2.5 End Service ACK
 
 ###### 3.1.3.2.6 End Service NAK
@@ -405,6 +408,7 @@ If there is no data to send for a given parameter, the parameter should not be i
 
 ### 3.2 Single Frame
 A frame of type Single Frame contains all the data for a particular packet in the payload. The majority of frames sent over the protocol utilize this frame type.
+
 <table width="100%">
   <tr>
   	<th colspan = "2" align="center">Single Frame</th>
@@ -503,6 +507,7 @@ Some payloads will be larger than the maximum transport unit will allow. If that
 The First Frame in a multiple frame payload contains information about the entire sequence of frames so that the receiving end can correctly parse all the frames and reassemble the entire payload. The payload of this frame is only eight bytes and contains information regarding the rest of the sequence.
 
 ##### 3.3.1.1 Payload:
+
 <table width = "100%">
 	<tr align="center">
 		<th>Byte</th>
@@ -643,6 +648,7 @@ Payload includes a constructed BSON object that has a single parameter of `proto
     <td>0xNNNNNNNN</td>
   </tr>
   </table>
+  
   <table width=100% >
   <tr>
   	<th colspan="8">Payload</th>
@@ -739,7 +745,7 @@ The payload of the `StartServiceACK` will contain the agreed upon full protocol 
     <td>0x0000000n</td>
   </tr>
 </table>
-</table>
+
 <table width=100% >
 	<tr>
   		<th colspan="8">Payload</th>
@@ -859,6 +865,7 @@ If a session has already been started, or can't be started, a `StartServiceNAK` 
     <td>0x00000000</td>
   </tr>
 </table>
+
 <table width=100% >
 	<tr>
   		<th colspan="8">Payload</th>
@@ -888,6 +895,7 @@ After a successful start service exchange between the application and head unit 
 >Note: The request can originate from either the Head Unit or the Application
 
 ##### Head Unit -> Application
+
 <table width="100%">
   <tr>
     <th>Version</th>
@@ -926,6 +934,7 @@ After a successful start service exchange between the application and head unit 
 >Note: The response ACK will originate from the Head Unit or the Application based on the origin of the request
 
 ##### Application -> Head Unit
+
 <table width="100%">
   <tr>
     <th>Version</th>
@@ -1130,6 +1139,7 @@ The `TransportEventUpdate` frame must always be sent through the Primary Transpo
     <td>0xNNNNNNNN</td>
   </tr>
 </table>
+
 <table width=100% >
 	<tr>
   		<th colspan="8">Payload</th>
@@ -1204,6 +1214,7 @@ The payload of a message sent via the RPC service, which directly follows the Fr
 </table>
 
 ##### 5.2.1.1 Binary Header Fields
+
 <table>
   <tr>
     <th>Field</th>
