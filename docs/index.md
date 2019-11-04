@@ -50,7 +50,7 @@ All transported data is formed with a header followed by an optional payload. Th
   </tr>
 </table>
 
-### 2.2 Version 2 Frame Header
+### 2.2  Version 2 Frame Header
 >Required: Protocol versions 2 and higher
 
 <table>
