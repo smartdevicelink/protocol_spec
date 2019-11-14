@@ -111,7 +111,8 @@ All transported data is formed with a header followed by an optional payload. Th
       0x2 Protocol version 2 - uses a version 2 Frame Header<br>
       0x3 Protocol version 3 - uses a version 2 Frame Header<br>
       0x4 Protocol version 4 - uses a version 2 Frame Header<br>
-      0x5 - 0xF Reserved
+      0x5 Protocol version 5 - uses a version 2 Frame Header<br>
+      0x6 - 0xF Reserved
     </td>
   </tr>
   <tr>
