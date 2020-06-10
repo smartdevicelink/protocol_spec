@@ -1171,7 +1171,155 @@ Messages sent have a priority based on their Service Type. Lower values for serv
 ### 5.1 Control Service
 >Required: All Protocol Versions
 
-The control service is the lowest level service available. While Control Frame packets are used frequently, the control service itself is rarely used.   
+The control service is the lowest level service available. While Control Frame packets are used frequently, the control service itself is rarely used.
+
+#### 5.1.1 Security Queries
+
+The control service can be used by the security component of SDL to establish secure connections. Messages relating to the security component of SDL include a header with a similar format to the Binary Header used in the RPC service.
+
+<table>
+  <tr>
+    <td align="center" width="5000">Security Query Header</td>
+  </tr>
+  <tr>
+    <td align="center">Data</td>
+  </tr>
+</table>
+
+#### 5.2.1.1 Security Query Header
+
+<table>
+  <tr>
+    <th width="250">Byte 1</th>
+    <th width="25%">Byte 2</th>
+    <th width="25%">Byte 3</th>
+    <th width="25%">Byte 4</th>
+  </tr>
+  <tr>
+    <td width="25%" align="center">Query Type</td>
+    <td colspan="3" align="center">Query ID</td>
+  </tr>
+  <tr>
+    <td colspan="4" align="center">Sequence Number</td>
+  </tr>
+  <tr>
+    <td colspan="4" align="center">Data Size</td>
+  </tr>
+</table>
+
+#### 5.2.1.2 Security Query Header Fields
+
+<table>
+  <tr>
+    <th>Field</th>
+    <th>Size</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td>Query Type</td>
+    <td>8 bit</td>
+    <td>
+      0x00 Request<br>
+      0x10 Response<br>
+      0x20 Notification<br>
+      0x01 - 0x0F, 0x11 - 0x1F, 0x21 - 0xFF Reserved
+    </td>
+  </tr>
+  <tr>
+    <td>Query ID</td>
+    <td>24 bit</td>
+    <td>
+      0x01 Handshake Data (Request/Response, sent from head unit)<br>
+      0x02 Internal Error (Notification, sent from either side)<br>
+      0x00, 0x03 - 0xFFFFFF Reserved
+    </td>
+  </tr>
+  <tr>
+    <td>Sequence Number</td>
+    <td>32 bits (signed)</td>
+    <td>The Sequence Number is used to map a request to its response.</td>
+  </tr>
+  <tr>
+    <td>Data Size</td>
+    <td>32 bits</td>
+    <td>The size of the Data following the Binary Header in the Security Query Payload</td>
+  </tr>
+</table>
+
+#### 5.2.1.3 Security Query Payload
+
+##### 5.2.1.3.1 Handshake Data
+
+The Handshake Data request is sent by the head unit to perform a security handshake with the application.
+
+**Request:**
+
+<table>
+  <tr>
+    <th align="center">Payload</th>
+  </tr>
+  <tr>
+    <td align="center" width="800">SSL Handshake Request</td>
+  </tr>
+</table>
+
+**Response:**
+
+<table>
+  <tr>
+    <th align="center">Payload</th>
+  </tr>
+  <tr>
+    <td align="center" width="800">SSL Handshake Response</td>
+  </tr>
+</table>
+
+##### 5.2.1.3.2 Internal Error
+
+The Internal Error query uses a JSON-formatted payload followed by a single byte error code to communicate an error that occurred during the handshake process. This message can be sent by either the head unit or application.
+
+**Payload Format:**
+
+<table>
+  <tr>
+    <th align="center" colspan="2">Payload</th>
+  </tr>
+  <tr>
+    <td align="center" width="700">JSON Data</td>
+    <td align="center" width="100">Error Code</td>
+  </tr>
+</table>
+
+**JSON Data Fields:**
+
+<table>
+  <tr>
+    <th>Key</th>
+    <th>Type</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td>"id"</td>
+    <td>Integer</td>
+    <td>
+      0x01 Invalid Query Size<br>
+      0x02 Invalid Query ID<br>
+      0x03 Encryption Not Supported<br>
+      0x04 Service Already Protected<br>
+      0x05 Service Not Protected<br>
+      0x06 Decryption Failed<br>
+      0x07 Encryption Failed<br>
+      0x08 Invalid SSL Data<br>
+      0xFF Generic Error<br>
+      0x00, 0x09 - 0xFE Reserved
+    </td>
+  </tr>
+  <tr>
+    <td>"text"</td>
+    <td>String</td>
+    <td>Human-readable message describing the error</td>
+  </tr>
+</table>
 
 ### 5.2 RPC Service
 >Required: All Protocol Versions
