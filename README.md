@@ -283,7 +283,7 @@ If there is no data to send for a given parameter, the parameter should not be i
 
 | Tag Name | Type | Introduced | Description |
 |----------|------|------------|-------------|
-| reason | String | 5.1.0 | Specify a string describing the reason of failure |
+| reason | String | 5.1.0 | A string describing the reason of failure |
 
 ###### 3.1.3.1.4 Transport Event Update
 
@@ -329,7 +329,7 @@ If there is no data to send for a given parameter, the parameter should not be i
 | Tag Name | Type | Introduced | Description |
 |----------|------|------------|-------------|
 | rejectedParams |String Array| 5.0.0 | An array of rejected parameters|
-| reason | String | 5.3.0 | Specify a string describing the reason of failure |
+| reason | String | 5.3.0 | A string describing the reason of failure |
 
 ###### 3.1.3.2.4 End Service
 | Tag Name | Type | Introduced | Description |
@@ -342,7 +342,7 @@ If there is no data to send for a given parameter, the parameter should not be i
 | Tag Name | Type | Introduced | Description |
 |----------|------|------------|-------------|
 | rejectedParams |String Array| 5.0.0 | An array of rejected parameters such as: [`hashId`] |
-| reason | String | 5.3.0 | Specify a string describing the reason of failure |
+| reason | String | 5.3.0 | A string describing the reason of failure |
 
 ##### 3.1.3.3 Audio Service
 ###### 3.1.3.3.1 Start Service
@@ -357,7 +357,7 @@ If there is no data to send for a given parameter, the parameter should not be i
 | Tag Name | Type | Introduced | Description |
 |----------|------|------------|-------------|
 | rejectedParams |String Array| 5.0.0 | An array of rejected parameters such as: [`videoProtocol`, `videoCodec`] |
-| reason | String | 5.3.0 | Specify a string describing the reason of failure |
+| reason | String | 5.3.0 | A string describing the reason of failure |
 
 ###### 3.1.3.3.4 End Service
 >No parameters
@@ -369,7 +369,7 @@ If there is no data to send for a given parameter, the parameter should not be i
 | Tag Name | Type | Introduced | Description |
 |----------|------|------------|-------------|
 | rejectedParams |String Array| 5.0.0 | An array of rejected parameters such as: [`hashId`] |
-| reason | String | 5.3.0 | Specify a string describing the reason of failure |
+| reason | String | 5.3.0 | A string describing the reason of failure |
 
 ##### 3.1.3.4 Video Service
 
@@ -395,7 +395,7 @@ If there is no data to send for a given parameter, the parameter should not be i
 | Tag Name | Type | Introduced | Description |
 |----------|------|------------|-------------|
 | rejectedParams |String Array| 5.0.0 | An array of rejected parameters such as: [`videoProtocol`, `videoCodec`] |
-| reason | String | 5.3.0 | Specify a string describing the reason of failure |
+| reason | String | 5.3.0 | A string describing the reason of failure |
 
 ###### 3.1.3.4.4 End Service
 >No parameters
@@ -407,7 +407,7 @@ If there is no data to send for a given parameter, the parameter should not be i
 | Tag Name | Type | Introduced | Description |
 |----------|------|------------|-------------|
 | rejectedParams |String Array| 5.0.0 | An array of rejected parameters such as: [`hashId`] |
-| reason | String | 5.3.0 | Specify a string describing the reason of failure |
+| reason | String | 5.3.0 | A string describing the reason of failure |
 
 
 
