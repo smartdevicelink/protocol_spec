@@ -1238,7 +1238,8 @@ The payload of a message sent via the RPC service, which directly follows the Fr
       0x0 Request<br>
       0x1 Response<br>
       0x2 Notification<br>
-      0x3 - 0xF Reserved
+      0x3 Erroneous Response<br>
+      0x4 - 0xF Reserved
     </td>
   </tr>
   <tr>
