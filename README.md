@@ -314,6 +314,7 @@ If there is no data to send for a given parameter, the parameter should not be i
 |make|String| 5.4.0 | Vehicle make value. Used by OEM exclusive apps to identify whether current vehicle is supported or not. |
 |model|String| 5.4.0 | Vehicle model value. Used by OEM exclusive apps to identify whether current vehicle is supported or not. |
 |modelYear|String| 5.4.0 | Vehicle model year value. Used by OEM exclusive apps to identify whether current vehicle is supported or not. |
+|trim|String| 5.4.0 | Vehicle trim value. Used by OEM exclusive apps to identify whether current vehicle is supported or not. |
 |systemSoftwareVersion|String| 5.4.0 | Vehicle system software version value. Can be specified in any format desired by the OEM. |
 |systemHardwareVersion|String| 5.4.0 | Vehicle system hardware version value. Can be specified in any format desired by the OEM. |
 
