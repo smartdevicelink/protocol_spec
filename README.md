@@ -1,6 +1,6 @@
 # SmartDeviceLink Protocol
 
-**Current Version: 5.3.0**
+**Current Version: 5.4.0**
 
 ## 1. Overview
 The SmartDeviceLink protocol specification describes the method for establishing communication between an application and head unit and registering the application for continued communication with the head unit. The protocol is used as the base formation of packets sent from one module to another. 
@@ -311,6 +311,12 @@ If there is no data to send for a given parameter, the parameter should not be i
 |audioServiceTransports|int32 array| 5.1.0 | Ordered list of transport priority types that support the audio service (`0x0A`). Only the values of `1` ("Primary Transport") or `2` ("Secondary Transport") shall be used. If both the primary and secondary transport support the audio service, both should be included (`1` and `2`) in the order they are preferred; otherwise only the single transport priority type should be included. An application must not start the audio service on a transport priority type that is not listed in the array.<br>If this parameter is not included the Primary Transport should be used for the audio service.|
 |videoServiceTransports|int32 array| 5.1.0 | Ordered list of transport priority types that support the video service (`0x0B`). Only the values of `1` ("Primary Transport") or `2` ("Secondary Transport") shall be used. If both the primary and secondary transport support the video service, both should be included (`1` and `2`) in the order they are preferred; otherwise only the single transport priority type should be included. An application must not start the video service on a transport priority type that is not listed in the array.<br>If this parameter is not included the Primary Transport should be used for the video service.|
 |authToken|String| 5.2.0 | Included exclusively when communicating with cloud applications. This token is used by a cloud application to authenticate a user account associated with the vehicle. |
+|make|String| 5.4.0 | Vehicle make value. Used by OEM exclusive apps to identify whether current vehicle is supported or not. |
+|model|String| 5.4.0 | Vehicle model value. Used by OEM exclusive apps to identify whether current vehicle is supported or not. |
+|modelYear|String| 5.4.0 | Vehicle model year value. Used by OEM exclusive apps to identify whether current vehicle is supported or not. |
+|trim|String| 5.4.0 | Vehicle trim value. Used by OEM exclusive apps to identify whether current vehicle is supported or not. |
+|systemSoftwareVersion|String| 5.4.0 | Vehicle system software version value. Can be specified in any format desired by the OEM. |
+|systemHardwareVersion|String| 5.4.0 | Vehicle system hardware version value. Can be specified in any format desired by the OEM. |
 
 **list of transport type strings**
 
@@ -1233,7 +1239,8 @@ The payload of a message sent via the RPC service, which directly follows the Fr
       0x0 Request<br>
       0x1 Response<br>
       0x2 Notification<br>
-      0x3 - 0xF Reserved
+      0x3 Erroneous Response<br>
+      0x4 - 0xF Reserved
     </td>
   </tr>
   <tr>
