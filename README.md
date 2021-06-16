@@ -123,7 +123,7 @@ All transported data is formed with a header followed by an optional payload. Th
   <tr>
     <td>E</td>
     <td>1 bit</td>
-    <td><b>Encryption Flag</b> <br> 0x0 This packet is not encrypted <br> 0x1 This packet is encrypted <br> <b>Note:</b> Only available in Protocol Version 2 and higher</td>
+    <td><b>Encryption Flag</b> <br> 0x0 This packet is not encrypted <br> 0x1 This packet is encrypted <br> <b>Note:</b> Only available in Protocol Version 2 and higher. Must be always set to zero for a First Frame</td>
   </tr>
   <tr>
     <td>Frame Type</td>
@@ -191,9 +191,9 @@ All transported data is formed with a header followed by an optional payload. Th
       <b>Frame Type = 0x00 (Control Frame)</b><br>
       0x0 - 0xFFFFFFFF reserved.<br>
       <b>Frame Type = 0x02 (First Frame)</b><br>
-      0x08 The data size for a first frame is always 8 bytes. In the payload, the first four bytes denote the Total Size of the data contained in all consecutive frames, and the second four bytes denote the number of consecutive frames following this one<br>
+      In the payload, the first four bytes denote the Total Size of the data contained in all consecutive frames. This is always the size of whole non-encrypted payload (even if consecutive frames are encrypted). The second four bytes denote the number of consecutive frames following this one<br>
       <b>Frame Type = 0x01 or 0x03 (Single or Consecutive Frame)</b><br>
-      The total bytes in this frame's payload
+      The total bytes in this frame's payload. If frame is encrypted this is the size of encrypted payload, otherwise size of non-encrypted payload.
     </td>
   </tr>
   <tr>
@@ -886,6 +886,10 @@ If a session has already been started, or can't be started, a `StartServiceNAK` 
   	</tr>
 </table>
 
+##### 4.2.5 Start Service
+
+The RPC service always needs to be started as unencrypted first, then it can be moved to an encrypted state by sending another `StartService` request containing an encryption flag set to `1` at a later point. Services of another type can be started as encrypted initially, i.e. it is not necessary to start them as unencrypted and then move to encrypted state using second `StartService` request (however such sequence of actions is also valid). See "7. Secured Communication" section for more details.
+
 ### 4.3 Registration
 >Required: All Protocol Versions
 
@@ -1182,7 +1186,226 @@ Messages sent have a priority based on their Service Type. Lower values for serv
 ### 5.1 Control Service
 >Required: All Protocol Versions
 
-The control service is the lowest level service available. While Control Frame packets are used frequently, the control service itself is rarely used.   
+The control service is the lowest level service available. While Control Frame packets are used frequently, the control service itself is rarely used.
+
+#### 5.1.1 Security Query
+
+The TLS Payload is sent in a binary query header. The size is 12 bytes which matches the size of the RPC Payload Binary Header.
+
+##### 5.1.1.1 Payload
+
+The security query is able to contain JSON data as well as binary data. During the handshake the TLS handshake data is sent as binary data. In case of an error, a notification is sent with an error code and error message as JSON data. See "Error handling" section for details.
+
+<table width="100%">
+  <tr><td align="center">Binary Query Header</td></tr>
+  <tr><td align="center">JSON Data</td></tr>
+  <tr><td align="center">Binary Data</td></tr>
+</table>
+
+##### 5.1.1.2 Binary Header
+
+<table width="100%">
+  <tr>
+    <th width="25%">Byte 1</th>
+    <th width="25%">Byte 2</th>
+    <th width="25%">Byte 3</th>
+    <th width="25%">Byte 4</th>
+  </tr>
+  <tr>
+    <td>Query Type</td>
+    <td colspan="3" align="center">Query ID</td>
+  </tr>
+  <tr>
+    <td colspan="4" align="center">Sequential Number</td>
+  </tr>
+  <tr>
+    <td colspan="4" align="center">JSON Size</td>
+  </tr>
+</table>
+
+###### 5.1.1.2.1 Binary Header Fields
+
+<table width="100%">
+  <tr>
+    <th>Field</th>
+    <th>Size</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td>Query Type</td>
+    <td>8 bit</td>
+    <td>
+      0x00 Request <br>
+      0x01 - 0x0F Reserved<br>
+      0x10 Response<br>
+      0x11 - 0x1F Reserved<br>
+      0x20 Notification<br>
+      0x21 - 0xFE Reserved<br>
+      0xFF Invalid Query Type
+    </td>
+  </tr>
+  <tr>
+    <td>Query ID</td>
+    <td>24 bit</td>
+    <td>
+      0x000001 Send Handshake Data<br>
+      0x000002 Send Internal Error<br>
+      0x000003 - 0xFFFFFE Reserved<br>
+      0xFFFFFF Invalid Query ID
+    </td>
+  </tr>
+  <tr>
+    <td>Sequential Number</td>
+    <td>32 bit</td>
+    <td>
+      Message ID can be set by the Mobile libraries to track security messages.
+      The system uses the same Message ID when replying to the query allowing the mobile to correlate messages.
+    </td>
+  </tr>
+  <tr>
+    <td>JSON Size</td>
+    <td>32 bit</td>
+    <td>The size of the JSON data following the binary query header.</td>
+  </tr>
+</table>
+
+#### 5.1.2 Error Frames
+
+If an error occurs during the TLS handshake, a notification is sent with both JSON data and binary data describing the error. The JSON data contains the error code and an error text. The binary data is one single byte and only contains the error code.
+
+The error code in JSON data and the binary data are the same value from the same code list.
+
+##### 5.1.2.1 Payload
+
+The following query header is used by the system and the application to send error messages.
+
+<table width="100%">
+  <tr>
+    <th colspan="4">Binary Query Header</th>
+  <tr>
+  <tr>
+    <th>Query Type</th>
+    <th>TLS Message Type</th>
+    <th>Sequential Number</th>
+    <th>JSON Size</th>
+  </tr>
+  <tr>
+    <td>Notification</td>
+    <td>Send Internal Error</td>
+    <td>Any number to be used to correlate query messages</td>
+    <td>Size of the JSON data</td>
+  </tr>
+  <tr>
+    <td>0x20</td>
+    <td>0x000002</td>
+    <td>0xNNNNNNNN</td>
+    <td>0xNNNNNNNN</td>
+  </tr>
+  <tr>
+    <th colspan="4">JSON Data</th>
+  </tr>
+  <tr>
+    <th colspan="4">Binary Data: Single Byte Error Code</th>
+  </tr>
+</table>
+
+##### 5.1.2.2 JSON structure
+
+<table width="100%">
+  <tr>
+    <th>Key</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td>id</td>
+    <td>A decimal value representing an Error code.</td>
+  </tr>
+  <tr>
+    <td>text</td>
+    <td>A string describing the error.</td>
+  </tr>
+</table>
+
+##### 5.1.2.3 Error codes
+
+<table width="100%">
+  <tr>
+    <th>Error code</th>
+    <th>Byte</th>
+    <th>Value</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td>ERROR_SUCCESS</td>
+    <td>0x00</td><td>0</td>
+    <td>Internal Security Manager value</td>
+  </tr>
+  <tr>
+    <td>ERROR_INVALID_QUERY_SIZE</td>
+    <td>0x01</td><td>1</td>
+    <td>Wrong size of query data</td>
+  </tr>
+  <tr>
+    <td>ERROR_INVALID_QUERY_ID</td>
+    <td>0x02</td><td>2</td>
+    <td>Unknown Query ID</td>
+  </tr>
+  <tr>
+    <td>ERROR_NOT_SUPPORTED</td>
+    <td>0x03</td><td>3</td>
+    <td>SDL does not support encryption</td>
+  </tr>
+  <tr>
+    <td>ERROR_SERVICE_ALREADY_PROTECTED</td>
+    <td>0x04</td><td>4</td>
+    <td>Received request to protect a service that was protected before</td>
+  </tr>
+  <tr>
+    <td>ERROR_SERVICE_NOT_PROTECTED</td>
+    <td>0x05</td><td>5</td>
+    <td>Received handshake or encrypted data for not protected service</td>
+  </tr>
+  <tr>
+    <td>ERROR_DECRYPTION_FAILED</td>
+    <td>0x06</td><td>6</td>
+    <td>Decryption failed</td>
+  </tr>
+  <tr>
+    <td>ERROR_ENCRYPTION_FAILED</td>
+    <td>0x07</td><td>7</td>
+    <td>Encryption failed</td>
+  </tr>
+  <tr>
+    <td>ERROR_SSL_INVALID_DATA</td>
+    <td>0x08</td><td>8</td>
+    <td>SSL invalid data</td>
+  </tr>
+  <tr>
+    <td>ERROR_HANDSHAKE_FAILED</td>
+    <td>0x09</td><td>9</td>
+    <td>In case of all other handshake errors</td>
+  </tr>
+  <tr>
+    <td>INVALID_CERT</td>
+    <td>0x0A</td><td>10</td>
+    <td>Handshake failed because certificate is invalid</td>
+  </tr>
+  <tr>
+    <td>EXPIRED_CERT</td>
+    <td>0x0B</td><td>11</td>
+    <td>Handshake failed because certificate is expired</td>
+  </tr>
+  <tr>
+    <td>ERROR_INTERNAL</td>
+    <td>0xFF</td><td>255</td>
+    <td>Internal error</td>
+  </tr>
+  <tr>
+    <td>ERROR_UNKNOWN_INTERNAL_ERROR</td>
+    <td>0xFE</td><td>254</td>
+    <td>Error value for testing</td>
+  </tr>
+</table>
 
 ### 5.2 RPC Service
 >Required: All Protocol Versions
@@ -1303,3 +1526,114 @@ To close out a communication session with the head unit, an application sends an
 
 ### 6.2 Closing Specific Services
 If the application doesn't want to completely stop its session, but only wishes to close a specific session it can do so using an `EndService` packet that's service type matches the service that the application is trying to close. The `EndService` packet should include the hash ID in its payload that was contained in the `StartServiceACK` for  that specific service.
+
+## 7. Secured Communication
+
+It is possible to establish a secured and encrypted communication with the system by setting the frame header encryption flag to `1` when starting a new service or by sending another `StartService` with the encryption flag set to `1` when the service is already established (this the required flow for the RPC service). If the authentication is successful, the system will reply with a `StartService ACK` frame with the encryption flag also set to `1` indicating that encrypted data is now accepted. If the authentication fails for some reason, the system will reset the TLS connection and return a `StartService NAK` frame.
+
+Before the encryption of RPC service is enabled (encryption is not available), SDL Core rejects any RPC request with result code `ENCRYPTION_NEEDED` if the RPC needs protection (please see policy updates for which RPCs need protection). SDL Core continues processing an RPC request if the RPC does not need protection. SDL Core sends a notification only if the notification RPC does not need protection.
+
+After the encryption of RPC service is enabled (encryption is available), SDL Core rejects any unencrypted RPC requests with result code `ENCRYPTION_NEEDED` with the unencrypted response if the RPC needs protection. SDL Core continues processing an unencrypted RPC request if the RPC does not need protection and responds with an unencrypted response. SDL Core continues processing an encrypted RPC request if the RPC needs protection and responds with an encrypted response. SDL Core sends an unencrypted notification if the RPC does not need protection. SDL Core sends an encrypted notification if the RPC needs protection. In addition, SDL Core shall continue processing an encrypted RPC request if the RPC does not need protection and responds with an encrypted response.
+
+### 7.1 Authentication
+
+The below diagram shows the sequence of how the TLS handshake exchanges certificates to compute the master secret.
+
+![TLS Handshake activity diagram](../assets/proposals/0317-sdl-protocol-security-specification/tls-handshake.png)
+
+The authentication is done using TLS handshake. The TLS handshake process is defined by TLS and is not part of the SDL protocol. The handshake is designed as a client server communication which is configurable in the system settings. An application must take the role of a server where the system is the client. The client entity will initiate a TLS handshake with the corresponding security manager of the server. The client will do this only if the server was not authenticated before in the current transport connection. According to the TLS handshake process the peer certificate can be omitted for the server but it's required for the client. Certificate peer verification can be enabled/disabled on the Core side by changing `VerifyPeer` parameter in the configuration file. On the other hand, the SDL app library does not require the certificate from Core for the TLS handshake. However, Core performs its internal certificate validation before starting the actual TLS handshake. During internal validation, Core checks if the certificate is missing (or outdated/invalid) and if so, it initiates a PTU to obtain a new certificate from the Policy Server. If a valid certificate can't be obtained, Core does not start the TLS handshake and it notifies the app library that the protected service start has failed.
+
+The system can be configured to support one encryption method. The following methods are supported:
+
+- SSLv3
+- TLSv1
+- TLSv1.1
+- TLSv1.2
+- DTLSv1
+
+The system has to initiate with the corresponding client method. For instance, if the system is configured to use `DTLSv1`, it has to use the method `DTLSv1_client`. The application role has to be server and must use `DTLSv1_server`.
+
+The system also supports configurable [SSL Security level](https://www.openssl.org/docs/man1.1.0/man3/SSL_CTX_get_security_level.html) introduced in OpenSSL 1.1.0. This parameter can be changed by `SecurityLevel` parameter in the Core configuration file. By default, system uses security level 1 for TLS handshakes. At this time setting the security level higher than 1 for general internet use is likely to cause considerable interoperability issues and is not recommended. This is because the SHA1 algorithm is very widely used in certificates and will be rejected at levels higher than 1 because it only offers 80 bits of security.
+
+### 7.2 Handshake Frames
+
+The system will initiate a TLS handshake to authenticate the application where the system's role will be the client while the application's role will be the server. The system will do this only once if the application was not authenticated before in the current transport connection. The TLS handshake data is always sent in single frames. The service type for TLS handshake is the control service. 
+
+#### 7.2.1 SDL Protocol Frame Header
+
+The following SDL frame header is used for every frame related to TLS handshake.
+
+<table width="100%">
+  <tr>
+    <th colspan="8">SDL Protocol Frame Header</th>
+  <tr>
+  <tr>
+    <th>Version</th>
+    <th>E</th>
+    <th>Frame Type</th>
+    <th>Service Type</th>
+    <th>Frame Info</th>
+    <th>Session ID</th>
+    <th>Data Size</th>
+    <th>Message ID</th>
+  </tr>
+  <tr>
+    <td>Max major version supported<br>by module and application</td>
+    <td>no</td>
+    <td>Single Frame</td>
+    <td>Control Service</td>
+    <td>Single Frame Info</td>
+    <td>Assigned Session ID</td>
+    <td>
+      Query Binary Header +<br>
+      JSON Data size + <br>
+      Binary Handshake Data size
+    </td>
+    <td>Enumerated number</td>
+  </tr>
+  <tr>
+    <td>0xN</td>
+    <td>0b0</td>
+    <td>0b001</td>
+    <td>0x00</td>
+    <td>0x00</td>
+    <td>0xNN</td>
+    <td>0xC + 0xNNNNNNNN + 0xNNNNNNNN</td>
+    <td>0xNNNNNNNN</td>
+  </tr>
+</table>
+
+#### 7.2.2 Security Query Binary Header
+
+The following query header is used by the system and the application to send TLS handshake data.
+
+<table width="100%">
+  <tr>
+    <th colspan="4">Binary Query Header</th>
+  <tr>
+  <tr>
+    <th>Query Type</th>
+    <th>TLS Message Type</th>
+    <th>Sequential Number</th>
+    <th>JSON Size</th>
+  </tr>
+  <tr>
+    <td>Request</td>
+    <td>Send Handshake Data</td>
+    <td>Any number to be used to correlate query messages</td>
+    <td>Zero</td>
+  </tr>
+  <tr>
+    <td>0x00</td>
+    <td>0x000001</td>
+    <td>0xNNNNNNNN</td>
+    <td>0x00000000</td>
+  </tr>
+  <tr>
+    <th colspan="4">Binary TLS Handshake Data</th>
+  </tr>
+</table>
+
+### 7.3 Error handling
+
+In case of an error, the system and the application should reset the active SSL connection of the current transport connection. This impacts already established secured service sessions as all of them will be closed. The application will need to restart all services which require protection.
