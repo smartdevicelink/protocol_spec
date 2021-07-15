@@ -191,7 +191,7 @@ All transported data is formed with a header followed by an optional payload. Th
       <b>Frame Type = 0x00 (Control Frame)</b><br>
       0x0 - 0xFFFFFFFF reserved.<br>
       <b>Frame Type = 0x02 (First Frame)</b><br>
-      In the payload, the first four bytes denote the Total Size of the data contained in all consecutive frames. This is always the size of whole non-encrypted payload (even if consecutive frames are encrypted). The second four bytes denote the number of consecutive frames following this one<br>
+      The data size for a first frame is always 8 bytes. In the payload, the first four bytes denote the Total Size of the data contained in all consecutive frames. This is always the size of whole non-encrypted payload (even if consecutive frames are encrypted). The second four bytes denote the number of consecutive frames following this one<br>
       <b>Frame Type = 0x01 or 0x03 (Single or Consecutive Frame)</b><br>
       The total bytes in this frame's payload. If frame is encrypted this is the size of encrypted payload, otherwise size of non-encrypted payload.
     </td>
@@ -1190,11 +1190,13 @@ The control service is the lowest level service available. While Control Frame p
 
 #### 5.1.1 Security Query
 
-The TLS Payload is sent in a binary query header. The size is 12 bytes which matches the size of the RPC Payload Binary Header.
+When establishing a secure connection, the TLS Payload is sent in a control service message with a binary query header. The size of this header is 12 bytes, similar to the RPC Payload Binary Header.
 
 ##### 5.1.1.1 Payload
 
-The security query is able to contain JSON data as well as binary data. During the handshake the TLS handshake data is sent as binary data. In case of an error, a notification is sent with an error code and error message as JSON data. See "Error handling" section for details.
+The security query is able to contain JSON data as well as binary data. During the handshake the TLS handshake data is sent as binary data. See "Send Handshake Data" section for details.
+
+In case of an error, a notification is sent with an error code and error message as JSON data. See "Error handling" section for details.
 
 <table width="100%">
   <tr><td align="center">Binary Query Header</td></tr>
@@ -1258,24 +1260,49 @@ The security query is able to contain JSON data as well as binary data. During t
     <td>Sequential Number</td>
     <td>32 bit</td>
     <td>
-      Message ID can be set by the Mobile libraries to track security messages.
-      The system uses the same Message ID when replying to the query allowing the mobile to correlate messages.
+      Message ID can be set by the mobile libraries to track security messages.<br>
+      The system uses the same Message ID when replying to the query allowing the mobile libraries to correlate messages.
     </td>
   </tr>
   <tr>
     <td>JSON Size</td>
     <td>32 bit</td>
-    <td>The size of the JSON data following the binary query header.</td>
+    <td>
+      The size of the JSON data following the binary query header.<br>
+      Any additional data following the JSON data in the payload is binary data.
+    </td>
   </tr>
 </table>
 
-#### 5.1.2 Error Frames
+##### 5.1.1.3 Send Handshake Data
+
+**Request:**
+<table width="100%">
+  <tr>
+    <th align="center">Binary Data</th>
+  </tr>
+  <tr>
+    <td align="center">SSL Handshake Request</td>
+  </tr>
+</table>
+
+**Response:**
+<table width="100%">
+  <tr>
+    <th align="center">Binary Data</th>
+  </tr>
+  <tr>
+    <td align="center">SSL Handshake Response</td>
+  </tr>
+</table>
+
+#### 5.1.1.4 Send Internal Error
 
 If an error occurs during the TLS handshake, a notification is sent with both JSON data and binary data describing the error. The JSON data contains the error code and an error text. The binary data is one single byte and only contains the error code.
 
 The error code in JSON data and the binary data are the same value from the same code list.
 
-##### 5.1.2.1 Payload
+##### 5.1.1.4.1 Payload
 
 The following query header is used by the system and the application to send error messages.
 
@@ -1309,7 +1336,7 @@ The following query header is used by the system and the application to send err
   </tr>
 </table>
 
-##### 5.1.2.2 JSON structure
+##### 5.1.1.4.2 JSON structure
 
 <table width="100%">
   <tr>
@@ -1326,7 +1353,7 @@ The following query header is used by the system and the application to send err
   </tr>
 </table>
 
-##### 5.1.2.3 Error codes
+##### 5.1.1.4.3 Error codes
 
 <table width="100%">
   <tr>
@@ -1379,21 +1406,6 @@ The following query header is used by the system and the application to send err
     <td>ERROR_SSL_INVALID_DATA</td>
     <td>0x08</td><td>8</td>
     <td>SSL invalid data</td>
-  </tr>
-  <tr>
-    <td>ERROR_HANDSHAKE_FAILED</td>
-    <td>0x09</td><td>9</td>
-    <td>In case of all other handshake errors</td>
-  </tr>
-  <tr>
-    <td>INVALID_CERT</td>
-    <td>0x0A</td><td>10</td>
-    <td>Handshake failed because certificate is invalid</td>
-  </tr>
-  <tr>
-    <td>EXPIRED_CERT</td>
-    <td>0x0B</td><td>11</td>
-    <td>Handshake failed because certificate is expired</td>
   </tr>
   <tr>
     <td>ERROR_INTERNAL</td>
@@ -1531,9 +1543,57 @@ If the application doesn't want to completely stop its session, but only wishes 
 
 It is possible to establish a secured and encrypted communication with the system by setting the frame header encryption flag to `1` when starting a new service or by sending another `StartService` with the encryption flag set to `1` when the service is already established (this the required flow for the RPC service). If the authentication is successful, the system will reply with a `StartService ACK` frame with the encryption flag also set to `1` indicating that encrypted data is now accepted. If the authentication fails for some reason, the system will reset the TLS connection and return a `StartService NAK` frame.
 
-Before the encryption of RPC service is enabled (encryption is not available), SDL Core rejects any RPC request with result code `ENCRYPTION_NEEDED` if the RPC needs protection (please see policy updates for which RPCs need protection). SDL Core continues processing an RPC request if the RPC does not need protection. SDL Core sends a notification only if the notification RPC does not need protection.
+Below are possible combinations of the service encryption status and RPCs protection flag value.
 
-After the encryption of RPC service is enabled (encryption is available), SDL Core rejects any unencrypted RPC requests with result code `ENCRYPTION_NEEDED` with the unencrypted response if the RPC needs protection. SDL Core continues processing an unencrypted RPC request if the RPC does not need protection and responds with an unencrypted response. SDL Core continues processing an encrypted RPC request if the RPC needs protection and responds with an encrypted response. SDL Core sends an unencrypted notification if the RPC does not need protection. SDL Core sends an encrypted notification if the RPC needs protection. In addition, SDL Core shall continue processing an encrypted RPC request if the RPC does not need protection and responds with an encrypted response.
+<table width="100%">
+  <tr>
+    <th width="25%">Service Encryption Status</th>
+    <th width="25%">RPC Status</th>
+    <th width="50%">Expected SDL Behavior</th>
+  </tr>
+  <tr>
+    <td>Encryption is disabled</td>
+    <td>RPC Request needs protection</td>
+    <td>SDL Core rejects any RPC request with result code `ENCRYPTION_NEEDED` (please see policy updates for which RPCs need protection)</td>
+  </tr>
+  <tr>
+    <td>Encryption is disabled</td>
+    <td>RPC Notification needs protection</td>
+    <td>SDL Core does not process the notification</td>
+  </tr>  
+  <tr>
+    <td>Encryption is disabled</td>
+    <td>RPC Request doesn't need a protection</td>
+    <td>SDL Core continues processing an RPC request</td>
+  </tr>
+  <tr>
+    <td>Encryption is disabled</td>
+    <td>RPC Notification doesn't need a protection</td>
+    <td>SDL Core continues processing a notification</td>
+  </tr>
+  
+  <tr>
+    <td>Encryption is enabled</td>
+    <td>RPC Request needs protection</td>
+    <td>SDL Core rejects any unencrypted RPC requests with result code `ENCRYPTION_NEEDED` with the unencrypted response.</td>
+  </tr>
+  <tr>
+    <td>Encryption is enabled</td>
+    <td>RPC Notification needs protection</td>
+    <td>SDL Core does not process an unencrypted notification</td>
+  </tr>
+  <tr>
+    <td>Encryption is enabled</td>
+    <td>RPC Notification doesn't need a protection</td>
+    <td>SDL Core sends an unencrypted notification. </td>
+  </tr>
+  <tr>
+    <td>Encryption is enabled</td>
+    <td>RPC Request doesn't need a protection</td>
+    <td>SDL Core continues processing an unencrypted RPC request if response is unencrypted. In addition, SDL Core shall continue processing an encrypted RPC request if response is encrypted.</td>
+  </tr>
+
+</table>
 
 ### 7.1 Authentication
 
@@ -1541,15 +1601,15 @@ The below diagram shows the sequence of how the TLS handshake exchanges certific
 
 ![TLS Handshake activity diagram](https://user-images.githubusercontent.com/5848997/122258220-cb8b7100-ce9e-11eb-9b2a-a6194b0d1b68.png)
 
-The authentication is done using TLS handshake. The TLS handshake process is defined by TLS and is not part of the SDL protocol. The handshake is designed as a client server communication which is configurable in the system settings. An application must take the role of a server where the system is the client. The client entity will initiate a TLS handshake with the corresponding security manager of the server. The client will do this only if the server was not authenticated before in the current transport connection. According to the TLS handshake process the peer certificate can be omitted for the server but it's required for the client. Certificate peer verification can be enabled/disabled on the Core side by changing `VerifyPeer` parameter in the configuration file. On the other hand, the SDL app library does not require the certificate from Core for the TLS handshake. However, Core performs its internal certificate validation before starting the actual TLS handshake. During internal validation, Core checks if the certificate is missing (or outdated/invalid) and if so, it initiates a PTU to obtain a new certificate from the Policy Server. If a valid certificate can't be obtained, Core does not start the TLS handshake and it notifies the app library that the protected service start has failed.
+The authentication is done using TLS handshake. The TLS handshake process is defined by TLS and is not part of the SDL protocol. The handshake is designed as a client-server communication which is configurable in the system settings. An application must take the role of a server where the system is the client. The client entity will initiate a TLS handshake with the corresponding security manager of the server. The client will do this only if the server was not authenticated before in the current transport connection. According to the TLS handshake process the peer certificate can be omitted for the server but it's required for the client. Certificate peer verification can be enabled/disabled on the Core side by changing `VerifyPeer` parameter in the configuration file. On the other hand, the SDL app library does not require the certificate from Core for the TLS handshake. However, Core performs its internal certificate validation before starting the actual TLS handshake. During internal validation, Core checks if the certificate is missing (or outdated/invalid) and if so, it initiates a PTU to obtain a new certificate from the Policy Server. If a valid certificate can't be obtained, Core does not start the TLS handshake and it notifies the app library that the protected service start has failed.
 
 The system can be configured to support one encryption method. The following methods are supported:
 
-- SSLv3
 - TLSv1
 - TLSv1.1
 - TLSv1.2
 - DTLSv1
+- SSLv3 (isn't supported on a newer systems)
 
 The system has to initiate with the corresponding client method. For instance, if the system is configured to use `DTLSv1`, it has to use the method `DTLSv1_client`. The application role has to be server and must use `DTLSv1_server`.
 
