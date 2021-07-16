@@ -1547,50 +1547,55 @@ Below are possible combinations of the service encryption status and RPCs protec
 
 <table width="100%">
   <tr>
-    <th width="25%">Service Encryption Status</th>
-    <th width="25%">RPC Status</th>
+    <th width="30%">Service Encryption Status</th>
+    <th width="10%">RPC Type</th>
+    <th width="10%">Requires Protection</th>
     <th width="50%">Expected SDL Behavior</th>
   </tr>
   <tr>
-    <td>Encryption is disabled</td>
-    <td>RPC Request needs protection</td>
-    <td>SDL Core rejects any RPC request with result code `ENCRYPTION_NEEDED` (please see policy updates for which RPCs need protection)</td>
+    <td rowspan="4">Encryption is not established</td>
+    <td rowspan="2">Request</td>
+    <td>yes</td>
+    <td>SDL Core rejects the request with result code `ENCRYPTION_NEEDED` (please see policy updates for which RPCs need protection).</td>
+  </tr> 
+  <tr>
+    <td>no</td>
+    <td>SDL Core continues processing the RPC request.</td>
   </tr>
   <tr>
-    <td>Encryption is disabled</td>
-    <td>RPC Notification needs protection</td>
-    <td>SDL Core does not process the notification</td>
-  </tr>  
+    <td rowspan="2">Notification</td>
+    <td>yes</td>
+    <td>SDL Core does not send the notification.</td>
+  </tr> 
   <tr>
-    <td>Encryption is disabled</td>
-    <td>RPC Request doesn't need a protection</td>
-    <td>SDL Core continues processing an RPC request</td>
-  </tr>
-  <tr>
-    <td>Encryption is disabled</td>
-    <td>RPC Notification doesn't need a protection</td>
-    <td>SDL Core continues processing a notification</td>
+    <td>no</td>
+    <td>SDL Core sends the notification unencrypted.</td>
   </tr>
   
   <tr>
-    <td>Encryption is enabled</td>
-    <td>RPC Request needs protection</td>
-    <td>SDL Core rejects any unencrypted RPC requests with result code `ENCRYPTION_NEEDED` with the unencrypted response.</td>
+    <td rowspan="4">Encryption is established</td>
+    <td rowspan="2">Request</td>
+    <td>yes</td>
+    <td>
+      If unencrypted, SDL Core rejects the request with an unencrypted response and result code `ENCRYPTION_NEEDED`.<br>
+      If encrypted, SDL Core continues processing the request and sends an encrypted response.
+    </td>
   </tr>
   <tr>
-    <td>Encryption is enabled</td>
-    <td>RPC Notification needs protection</td>
-    <td>SDL Core does not process an unencrypted notification</td>
+    <td>no</td>
+    <td>
+      If unencrypted, SDL Core continues processing the request and sends an unencrypted response.<br>
+      If encrypted, SDL Core continues processing the request and sends an encrypted response.
+    </td>
   </tr>
   <tr>
-    <td>Encryption is enabled</td>
-    <td>RPC Notification doesn't need a protection</td>
-    <td>SDL Core sends an unencrypted notification. </td>
+    <td rowspan="2">Notification</td>
+    <td>yes</td>
+    <td>SDL Core sends the notification encrypted.</td>
   </tr>
   <tr>
-    <td>Encryption is enabled</td>
-    <td>RPC Request doesn't need a protection</td>
-    <td>SDL Core continues processing an unencrypted RPC request if response is unencrypted. In addition, SDL Core shall continue processing an encrypted RPC request if response is encrypted.</td>
+    <td>no</td>
+    <td>SDL Core sends the notification unencrypted.</td>
   </tr>
 
 </table>
