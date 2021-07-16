@@ -1196,7 +1196,7 @@ When establishing a secure connection, the TLS Payload is sent in a control serv
 
 The security query is able to contain JSON data as well as binary data. During the handshake the TLS handshake data is sent as binary data. See "Send Handshake Data" section for details.
 
-In case of an error, a notification is sent with an error code and error message as JSON data. See "Error handling" section for details.
+In case of an error, a notification is sent with an error code and error message as JSON data. See "Send Internal Error" section for details.
 
 <table width="100%">
   <tr><td align="center">Binary Query Header</td></tr>
@@ -1602,11 +1602,13 @@ Below are possible combinations of the service encryption status and RPCs protec
 
 ### 7.1 Authentication
 
+The authentication is done using TLS handshake. The TLS handshake process is defined by TLS and is not part of the SDL protocol. 
+
 The below diagram shows the sequence of how the TLS handshake exchanges certificates to compute the master secret.
 
 ![TLS Handshake activity diagram](https://user-images.githubusercontent.com/5848997/122258220-cb8b7100-ce9e-11eb-9b2a-a6194b0d1b68.png)
 
-The authentication is done using TLS handshake. The TLS handshake process is defined by TLS and is not part of the SDL protocol. The handshake is designed as a client-server communication which is configurable in the system settings. An application must take the role of a server where the system is the client. The client entity will initiate a TLS handshake with the corresponding security manager of the server. The client will do this only if the server was not authenticated before in the current transport connection. According to the TLS handshake process the peer certificate can be omitted for the server but it's required for the client. Certificate peer verification can be enabled/disabled on the Core side by changing `VerifyPeer` parameter in the configuration file. On the other hand, the SDL app library does not require the certificate from Core for the TLS handshake. However, Core performs its internal certificate validation before starting the actual TLS handshake. During internal validation, Core checks if the certificate is missing (or outdated/invalid) and if so, it initiates a PTU to obtain a new certificate from the Policy Server. If a valid certificate can't be obtained, Core does not start the TLS handshake and it notifies the app library that the protected service start has failed.
+Please see SDL Core Guides for more details.
 
 The system can be configured to support one encryption method. The following methods are supported:
 
@@ -1614,7 +1616,7 @@ The system can be configured to support one encryption method. The following met
 - TLSv1.1
 - TLSv1.2
 - DTLSv1
-- SSLv3 (isn't supported on a newer systems)
+- SSLv3 (not supported on most newer systems)
 
 The system has to initiate with the corresponding client method. For instance, if the system is configured to use `DTLSv1`, it has to use the method `DTLSv1_client`. The application role has to be server and must use `DTLSv1_server`.
 
