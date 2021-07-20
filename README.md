@@ -191,7 +191,7 @@ All transported data is formed with a header followed by an optional payload. Th
       <b>Frame Type = 0x00 (Control Frame)</b><br>
       0x0 - 0xFFFFFFFF reserved.<br>
       <b>Frame Type = 0x02 (First Frame)</b><br>
-      The data size for a first frame is always 8 bytes. In the payload, the first four bytes denote the Total Size of the data contained in all consecutive frames. This is always the size of whole non-encrypted payload (even if consecutive frames are encrypted). The second four bytes denote the number of consecutive frames following this one<br>
+      0x08 The data size for a first frame is always 8 bytes. In the payload, the first four bytes denote the Total Size of the data contained in all consecutive frames. This is always the size of whole non-encrypted payload (even if consecutive frames are encrypted). The second four bytes denote the number of consecutive frames following this one<br>
       <b>Frame Type = 0x01 or 0x03 (Single or Consecutive Frame)</b><br>
       The total bytes in this frame's payload. If frame is encrypted this is the size of encrypted payload, otherwise size of non-encrypted payload.
     </td>
