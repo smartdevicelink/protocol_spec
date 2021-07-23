@@ -1608,7 +1608,7 @@ The below diagram shows the sequence of how the TLS handshake exchanges certific
 
 ![TLS Handshake activity diagram](https://user-images.githubusercontent.com/5848997/122258220-cb8b7100-ce9e-11eb-9b2a-a6194b0d1b68.png)
 
-Please see [SDL Overview Guides](https://github.com/smartdevicelink/sdl_overview_guides/tree/develop/docs/Protected%20Services/index.md) for more details.
+Please see [SDL Overview Guides](https://smartdevicelink.com/en/guides/pull_request/sdl-overview-guides/security/protected-services/) for more details.
 
 The system can be configured to support one encryption method. The following methods are supported:
 
