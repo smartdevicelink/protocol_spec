@@ -1276,23 +1276,64 @@ In case of an error, a notification is sent with an error code and error message
 
 ##### 5.1.1.3 Send Handshake Data
 
-**Request:**
+When performing the TLS handshake, the server sends a "Send Handshake Data" request containing its handshake data to the client, and the client sends a response with its own handshake data accordingly.
+
+###### 5.1.1.3.1 Request Payload
+
+**Note:** Prior to SDL Core version 8.0.0, Core sent the "Notification" type (`0x20`) in this message instead of "Request" (`0x00`). Client libraries should account for this when communicating with older versions of SDL Core.
+
 <table width="100%">
   <tr>
-    <th align="center">Binary Data</th>
+    <th colspan="4">Binary Query Header</th>
+  <tr>
+  <tr>
+    <th>Query Type</th>
+    <th>TLS Message Type</th>
+    <th>Sequential Number</th>
+    <th>JSON Size</th>
   </tr>
   <tr>
-    <td align="center">SSL Handshake Request</td>
+    <td>Request</td>
+    <td>Send Handshake Data</td>
+    <td>Any number to be used to correlate query messages</td>
+    <td>Zero</td>
+  </tr>
+  <tr>
+    <td>0x00</td>
+    <td>0x000001</td>
+    <td>0xNNNNNNNN</td>
+    <td>0x00000000</td>
+  </tr>
+  <tr>
+    <th align="center">Binary Data: SSL Handshake Request</td>
   </tr>
 </table>
 
-**Response:**
+###### 5.1.1.3.2 Response Payload
 <table width="100%">
   <tr>
-    <th align="center">Binary Data</th>
+    <th colspan="4">Binary Query Header</th>
+  <tr>
+  <tr>
+    <th>Query Type</th>
+    <th>TLS Message Type</th>
+    <th>Sequential Number</th>
+    <th>JSON Size</th>
   </tr>
   <tr>
-    <td align="center">SSL Handshake Response</td>
+    <td>Response</td>
+    <td>Send Handshake Data</td>
+    <td>Any number to be used to correlate query messages</td>
+    <td>Zero</td>
+  </tr>
+  <tr>
+    <td>0x10</td>
+    <td>0x000001</td>
+    <td>0xNNNNNNNN</td>
+    <td>0x00000000</td>
+  </tr>
+  <tr>
+    <th align="center">Binary Data: SSL Handshake Response</td>
   </tr>
 </table>
 
@@ -1319,7 +1360,7 @@ The following query header is used by the system and the application to send err
   <tr>
     <td>Notification</td>
     <td>Send Internal Error</td>
-    <td>Any number to be used to correlate query messages</td>
+    <td>Unused</td>
     <td>Size of the JSON data</td>
   </tr>
   <tr>
