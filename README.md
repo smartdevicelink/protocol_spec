@@ -1305,7 +1305,7 @@ When performing the TLS handshake, the server sends a "Send Handshake Data" requ
     <td>0x00000000</td>
   </tr>
   <tr>
-    <th align="center">Binary Data: SSL Handshake Request</td>
+    <th align="center" colspan="4">Binary Data: SSL Handshake Request</td>
   </tr>
 </table>
 
@@ -1333,7 +1333,7 @@ When performing the TLS handshake, the server sends a "Send Handshake Data" requ
     <td>0x00000000</td>
   </tr>
   <tr>
-    <th align="center">Binary Data: SSL Handshake Response</td>
+    <th align="center" colspan="4">Binary Data: SSL Handshake Response</td>
   </tr>
 </table>
 
