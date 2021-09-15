@@ -1449,6 +1449,21 @@ The following query header is used by the system and the application to send err
     <td>SSL invalid data</td>
   </tr>
   <tr>
+    <td>ERROR_HANDSHAKE_FAILED</td>
+    <td>0x09</td><td>9</td>
+    <td>In case of all other handshake errors</td>
+  </tr>
+  <tr>
+    <td>INVALID_CERT</td>
+    <td>0x0A</td><td>10</td>
+    <td>Handshake failed because certificate is invalid</td>
+  </tr>
+  <tr>
+    <td>EXPIRED_CERT</td>
+    <td>0x0B</td><td>11</td>
+    <td>Handshake failed because certificate is expired</td>
+  </tr>
+  <tr>
     <td>ERROR_INTERNAL</td>
     <td>0xFF</td><td>255</td>
     <td>Internal error</td>
