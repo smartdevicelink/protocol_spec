@@ -1,6 +1,6 @@
 # SmartDeviceLink Protocol
 
-**Current Version: 5.4.0**
+**Current Version: 5.4.1**
 
 ## 1. Overview
 The SmartDeviceLink protocol specification describes the method for establishing communication between an application and head unit and registering the application for continued communication with the head unit. The protocol is used as the base formation of packets sent from one module to another. 
@@ -665,7 +665,7 @@ Payload includes a constructed BSON object that has a single parameter of `proto
   	<th colspan="8">Payload</th>
   </tr>
   <tr align="center">
-  	<td colspan="8" > [protocolVersion: x.x.x]</td
+  	<td colspan="8" > [protocolVersion: x.x.x]</td>
   </tr>
 </table>
 
